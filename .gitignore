@@ -1,0 +1,22 @@
+node_modules/
+.next/
+out/
+dist/
+.env
+.env.*
+!.env.example
+.vercel
+.DS_Store
+Thumbs.db
+*.log
+coverage/
+playwright-report/
+test-results/
+.idea/
+.vscode/
+*.tsbuildinfo
+
+# Kept on disk; not published with the repo
+.cursor/rules/
+artefacts/
+knowledge/
