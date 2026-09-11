@@ -58,6 +58,14 @@ Indexes: `(location)`, `(department)`, `(starts_at)`, `(deleted_at)`.
 
 No update/delete from the API. Index `(entity_type, entity_id)`.
 
+## Recommendation (no table)
+
+`GET /api/events/{id}/recommendations` reads other non-deleted events:
+
+1. Same `location`, exclude self, limit 3
+2. Same `department`, exclude self and already picked, limit 3
+3. Similar `title`: `word_similarity` or `ILIKE` on significant tokens, exclude self, limit 3
+
 ## Should stubs (create empty tables in M5 so FKs exist; no UI)
 
 - `profiles (user_id PK FK users, department text, campus text, bio text)`
