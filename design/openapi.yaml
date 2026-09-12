@@ -1,0 +1,296 @@
+openapi: 3.1.0
+info:
+  title: Secure Volunteer and Event Coordination Platform
+  version: 0.1.0
+  description: |
+    Must endpoints for C262T-4104.
+    Hosted later on Vercel. Auth via Supabase.
+    Demo only — not an official Adelaide University system.
+servers:
+  - url: /api
+    description: Next.js route handlers
+tags:
+  - name: Auth
+  - name: Events
+  - name: Admin
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+      description: Supabase session cookie set on login. HttpOnly in production.
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          examples: [unauthorized, forbidden, validation_error, not_found]
+        message:
+          type: string
+    User:
+      type: object
+      required: [id, email, displayName, role]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        displayName: { type: string, minLength: 1, maxLength: 80 }
+        role: { type: string, enum: [admin, student] }
+    Event:
+      type: object
+      required: [id, title, description, location, department, startsAt, endsAt]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, minLength: 1, maxLength: 4000 }
+        location: { type: string }
+        department: { type: string }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+        createdBy: { type: string, format: uuid }
+    EventWrite:
+      type: object
+      required: [title, description, location, department, startsAt, endsAt]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: string, minLength: 1, maxLength: 4000 }
+        location: { type: string, minLength: 1, maxLength: 80 }
+        department: { type: string, minLength: 1, maxLength: 80 }
+        startsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time }
+    RecommendationSet:
+      type: object
+      required: [eventId, byLocation, byDepartment, bySimilarity]
+      properties:
+        eventId: { type: string, format: uuid }
+        byLocation:
+          type: array
+          items: { $ref: '#/components/schemas/Event' }
+        byDepartment:
+          type: array
+          items: { $ref: '#/components/schemas/Event' }
+        bySimilarity:
+          type: array
+          items: { $ref: '#/components/schemas/Event' }
+    AuditRow:
+      type: object
+      required: [id, actorId, action, entityType, entityId, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        actorId: { type: string, format: uuid }
+        action: { type: string, enum: [event.create, event.update, event.delete] }
+        entityType: { type: string, enum: [event] }
+        entityId: { type: string, format: uuid }
+        metadata: { type: object }
+        createdAt: { type: string, format: date-time }
+    RegisterRequest:
+      type: object
+      required: [email, password, displayName]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 12, maxLength: 72 }
+        displayName: { type: string, minLength: 1, maxLength: 80 }
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+  responses:
+    Unauthorized:
+      description: Missing or invalid session
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated but role cannot perform this action
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Validation:
+      description: Field validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a Student demo account
+      description: New public registrations are role=student. Admin users are seeded. US-M03.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterRequest' }
+      responses:
+        '201':
+          description: Session cookie set
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '400': { $ref: '#/components/responses/Validation' }
+        '409':
+          description: Email already registered
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Session cookie set
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Sign out and clear cookie
+      security: [{ cookieAuth: [] }]
+      responses:
+        '204': { description: Cookie cleared }
+  /auth/session:
+    get:
+      tags: [Auth]
+      summary: Current user
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/User' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /events:
+    get:
+      tags: [Events]
+      summary: List visible events
+      description: Students and Admins. Excludes soft-deleted. Filter US-M08 US-M09.
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string, maxLength: 80 }
+        - in: query
+          name: location
+          schema: { type: string }
+        - in: query
+          name: department
+          schema: { type: string }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items: { $ref: '#/components/schemas/Event' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Events]
+      summary: Create event (Admin)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventWrite' }
+      responses:
+        '201':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/Validation' }
+  /events/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Events]
+      summary: Event detail
+      security: [{ cookieAuth: [] }]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Missing or deleted }
+    patch:
+      tags: [Events]
+      summary: Update event (Admin)
+      security: [{ cookieAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventWrite' }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Event' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '400': { $ref: '#/components/responses/Validation' }
+        '404': { description: Missing }
+    delete:
+      tags: [Events]
+      summary: Soft-delete event (Admin)
+      security: [{ cookieAuth: [] }]
+      responses:
+        '204': { description: deleted_at set; audit written }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { description: Missing }
+  /events/{id}/recommendations:
+    get:
+      tags: [Events]
+      summary: Recommendations for the opened event
+      description: Location, department, similarity. Opened event excluded. US-M10.
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecommendationSet' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { description: Missing }
+  /admin/audit:
+    get:
+      tags: [Admin]
+      summary: Audit rows for event mutations
+      security: [{ cookieAuth: [] }]
+      parameters:
+        - in: query
+          name: entityId
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rows:
+                    type: array
+                    items: { $ref: '#/components/schemas/AuditRow' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
