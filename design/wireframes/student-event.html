@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Event detail — wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&amp;family=Roboto+Serif:opsz,wght@8..144,400;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/annotations.css" />
+</head>
+<body class="page">
+  <div class="demo-banner">Demo Website — <span>Student prototype. Not an official university system.</span></div>
+  <div class="utility">
+    <a href="student-explore.html">Students</a>
+    <a href="admin-events.html">Staff</a>
+  </div>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="index.html">
+        <span class="brand__mark" aria-hidden="true">A</span>
+        <span class="brand__text">
+          <span class="brand__name">Adelaide University</span>
+          <span class="brand__tag">Volunteer and events · demo</span>
+        </span>
+      </a>
+      <nav class="nav-main">
+        <a href="index.html">Review</a>
+        <a href="student-explore.html">Explore</a>
+        <a href="student-event.html" aria-current="page">Event</a>
+        <a href="auth.html">Sign out</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page__main wrap">
+    <p class="wf-note">Recommendations: same location, same department, similar title tokens. The opened event is excluded. No browsing-history table.</p>
+    <div class="split">
+      <article class="card split__primary">
+        <p><a href="student-explore.html">← All events</a></p>
+        <div class="tag-row"><span class="tag">Adelaide City</span><span class="tag">Student Life</span></div>
+        <h1>Open Day wayfinding</h1>
+        <p class="meta">12 Oct 2026 · 09:00–16:00 · created by Alex Admin</p>
+        <p>Help visitors find lecture theatres and the student hub. Meet at the Barr Smith Lawns tent. Synthetic demo event — not a real roster.</p>
+        <p class="hint">Apply-for-role is Should (US-S02). Not on this Must screen.</p>
+      </article>
+      <aside class="split__aside">
+        <h2>Recommended</h2>
+        <a class="card card--link rec" href="student-event.html">
+          <p class="meta">Same location</p>
+          <h3>Library shelving sprint</h3>
+          <p class="meta">Adelaide City · Libraries</p>
+        </a>
+        <a class="card card--link rec" href="student-event.html">
+          <p class="meta">Same department</p>
+          <h3>Mawson Lakes welcome desk</h3>
+          <p class="meta">Mawson Lakes · Student Life</p>
+        </a>
+        <a class="card card--link rec" href="student-event.html">
+          <p class="meta">Similar title</p>
+          <h3>Open Day lab tours</h3>
+          <p class="meta">Waite · College of Science</p>
+        </a>
+      </aside>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>Adelaide University · Student portal · Demo Website</p>
+    </div>
+  </footer>
+</body>
+</html>

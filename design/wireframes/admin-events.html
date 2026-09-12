@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin events — wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&amp;family=Roboto+Serif:opsz,wght@8..144,400;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/annotations.css" />
+</head>
+<body class="page">
+  <div class="demo-banner">Demo Website — <span>This is a student project prototype for Adelaide University Industry Research Project A01. It is not an official university system. Do not enter real personal data.</span></div>
+  <div class="utility">
+    <a href="student-explore.html">Students</a>
+    <a href="admin-events.html">Staff</a>
+    <a href="auth.html">Sign out</a>
+  </div>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="index.html">
+        <span class="brand__mark" aria-hidden="true">A</span>
+        <span class="brand__text">
+          <span class="brand__name">Adelaide University</span>
+          <span class="brand__tag">Volunteer and events · demo</span>
+        </span>
+      </a>
+      <nav class="nav-main" aria-label="Admin">
+        <a href="index.html">Review</a>
+        <a href="admin-events.html" aria-current="page">Events</a>
+        <a href="admin-event-form.html">New event</a>
+        <a href="auth.html">Sign out</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page__main wrap">
+    <p class="wf-note">Students never see New event. Delete is two-step. Soft-delete writes an audit row.</p>
+    <h1>Events</h1>
+    <p class="lead">Signed in as Alex Admin · Adelaide City Campus (synthetic)</p>
+    <p><a class="btn" href="admin-event-form.html">Create event</a></p>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Title</th><th>Location</th><th>Department</th><th>Starts</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Open Day wayfinding</td>
+            <td>Adelaide City</td>
+            <td>Student Life</td>
+            <td>12 Oct 2026 09:00</td>
+            <td><a href="admin-event-form.html">Edit</a> · <a href="#confirm">Delete</a></td>
+          </tr>
+          <tr>
+            <td>Library shelving sprint</td>
+            <td>Adelaide City</td>
+            <td>Libraries</td>
+            <td>18 Oct 2026 14:00</td>
+            <td><a href="admin-event-form.html">Edit</a> · <a href="#confirm">Delete</a></td>
+          </tr>
+          <tr>
+            <td>Mawson Lakes welcome desk</td>
+            <td>Mawson Lakes</td>
+            <td>Student Life</td>
+            <td>20 Oct 2026 10:00</td>
+            <td><a href="admin-event-form.html">Edit</a> · <a href="#confirm">Delete</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="confirm" class="card">
+      <h3>Delete “Open Day wayfinding”?</h3>
+      <p class="meta">The row is soft-deleted. An audit entry is written. Students stop seeing it on explore.</p>
+      <div class="btn-row">
+        <button class="btn btn--danger" type="button">Delete event</button>
+        <a class="btn btn--ghost" href="admin-events.html">Cancel</a>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>Adelaide University · Admin portal · Demo Website</p>
+    </div>
+  </footer>
+</body>
+</html>

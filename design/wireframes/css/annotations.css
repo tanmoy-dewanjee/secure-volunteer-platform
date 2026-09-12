@@ -1,0 +1,9 @@
+/* Review-only notes. Strip this stylesheet when importing into Figma / Penpot / html-to-design. */
+
+.wf-note {
+  background: var(--au-limestone);
+  border-left: 4px solid var(--au-purple);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-4);
+}

@@ -1,0 +1,38 @@
+/* Adelaide University tokens sampled from adelaide.edu.au CSS, 15 Sep 2026.
+   Official names: Dark Blue, Bright Blue, North Terrace Purple, South East Limestone.
+   This file is the single palette for wireframes and the M5 Tailwind map. */
+
+:root {
+  --au-dark-blue: #140f50;
+  --au-dark-blue-deep: #080620;
+  --au-bright-blue: #1448ff;
+  --au-bright-blue-hover: #0c2b99;
+  --au-bright-blue-soft: #436dff;
+  --au-purple: #836bff;
+  --au-purple-deep: #6956cc;
+  --au-limestone: #f9f2e6;
+  --au-paper: #fafafb;
+  --au-mist: #f3f3f6;
+  --au-ink: #140f50;
+  --au-muted: #586167;
+  --au-line: #d0cfdc;
+  --au-white: #ffffff;
+  --au-danger: #d32362;
+  --au-focus: #1448ff;
+
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-body: "Roboto Serif", Georgia, "Times New Roman", serif;
+  --font-ui: "Roboto Serif", Georgia, serif;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius: 4px;
+  --max: 72rem;
+  --shadow: 0 8px 24px rgba(20, 15, 80, 0.08);
+}
