@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Create event — wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&amp;family=Roboto+Serif:opsz,wght@8..144,400;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/annotations.css" />
+</head>
+<body class="page">
+  <div class="demo-banner">Demo Website — <span>Student prototype. Not an official university system.</span></div>
+  <div class="utility">
+    <a href="student-explore.html">Students</a>
+    <a href="admin-events.html">Staff</a>
+  </div>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="index.html">
+        <span class="brand__mark" aria-hidden="true">A</span>
+        <span class="brand__text">
+          <span class="brand__name">Adelaide University</span>
+          <span class="brand__tag">Volunteer and events · demo</span>
+        </span>
+      </a>
+      <nav class="nav-main">
+        <a href="index.html">Review</a>
+        <a href="admin-events.html">Events</a>
+        <a href="admin-event-form.html" aria-current="page">New event</a>
+        <a href="auth.html">Sign out</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page__main wrap">
+    <p class="wf-note">Location and department are required: they drive Student filters and recommendations. Campus names follow adelaide.edu.au (Adelaide City, Mawson Lakes, Magill, Waite).</p>
+    <h1>Create event</h1>
+    <form class="card form-card" action="admin-events.html" method="get">
+      <label for="title">Title</label>
+      <input id="title" name="title" maxlength="120" value="Open Day wayfinding" />
+      <p class="hint">Max 120 characters. No HTML.</p>
+      <label for="location">Location</label>
+      <select id="location" name="location">
+        <option>Adelaide City</option>
+        <option>Mawson Lakes</option>
+        <option>Magill</option>
+        <option>Waite</option>
+      </select>
+      <label for="department">Department</label>
+      <select id="department" name="department">
+        <option>Student Life</option>
+        <option>Libraries</option>
+        <option>Facilities</option>
+        <option>College of Science</option>
+      </select>
+      <label for="starts">Starts</label>
+      <input id="starts" type="datetime-local" value="2026-10-12T09:00" />
+      <label for="ends">Ends</label>
+      <input id="ends" type="datetime-local" value="2026-10-12T16:00" />
+      <label for="desc">Description</label>
+      <textarea id="desc" rows="4">Help visitors find lecture theatres and the student hub. Synthetic demo event.</textarea>
+      <div class="btn-row">
+        <button class="btn" type="submit">Save event</button>
+        <a class="btn btn--ghost" href="admin-events.html">Cancel</a>
+      </div>
+    </form>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>Adelaide University · Saving writes an audit row · Demo Website</p>
+    </div>
+  </footer>
+</body>
+</html>

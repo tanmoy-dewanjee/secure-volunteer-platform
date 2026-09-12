@@ -1,0 +1,228 @@
+/* Page chrome. Flexbox only — no CSS Grid — so html-to-design / Penpot / Anima imports stay predictable. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page__main {
+  flex: 1 1 auto;
+}
+
+.wrap {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+}
+
+.demo-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  background: var(--au-limestone);
+  color: var(--au-dark-blue);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: var(--space-2) var(--space-4);
+  text-align: center;
+}
+
+.demo-banner span {
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.utility {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--au-white);
+  border-bottom: 1px solid var(--au-line);
+  font-size: 0.85rem;
+}
+
+.utility a {
+  color: var(--au-ink);
+  text-decoration: none;
+}
+
+.masthead {
+  background: var(--au-dark-blue);
+  color: var(--au-white);
+}
+
+.masthead__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--au-white);
+  text-decoration: none;
+}
+
+.brand__mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: var(--au-white);
+  color: var(--au-dark-blue);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.35rem;
+  clip-path: polygon(0 12%, 72% 0, 100% 28%, 100% 100%, 18% 100%);
+}
+
+.brand__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand__name {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.brand__tag {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.nav-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.nav-main a {
+  color: var(--au-white);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: var(--space-2) var(--space-3);
+}
+
+.nav-main a[aria-current="page"],
+.nav-main a:hover {
+  box-shadow: inset 0 -3px 0 var(--au-bright-blue);
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 14rem;
+  padding: var(--space-7) var(--space-4);
+  background: var(--au-dark-blue);
+  color: var(--au-white);
+  overflow: hidden;
+}
+
+.hero__shape {
+  position: absolute;
+  right: -2rem;
+  top: -2rem;
+  width: 18rem;
+  height: 18rem;
+  background: var(--au-purple);
+  clip-path: polygon(18% 0, 100% 0, 100% 72%, 42% 100%);
+  opacity: 0.85;
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero h1 {
+  color: var(--au-white);
+  max-width: 18ch;
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.cluster > * {
+  flex: 1 1 16rem;
+}
+
+.cluster--after {
+  margin-top: var(--space-5);
+}
+
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.split__primary {
+  flex: 2 1 28rem;
+}
+
+.split__aside {
+  flex: 1 1 16rem;
+}
+
+.site-footer {
+  background: var(--au-dark-blue);
+  color: var(--au-white);
+  margin-top: auto;
+}
+
+.site-footer a {
+  color: var(--au-white);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-5);
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.site-footer__legal {
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: var(--space-4);
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+@media (max-width: 48rem) {
+  .masthead__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

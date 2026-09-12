@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wireframes — Adelaide University volunteer platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&amp;family=Roboto+Serif:opsz,wght@8..144,400;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/annotations.css" />
+</head>
+<body class="page">
+  <div class="demo-banner">Demo Website — <span>Student prototype for A01. Not an official university system. Do not enter real personal data.</span></div>
+  <div class="utility">
+    <a href="student-explore.html">Students</a>
+    <a href="admin-events.html">Staff</a>
+    <a href="../ui-kit.html">UI kit</a>
+  </div>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="index.html">
+        <span class="brand__mark" aria-hidden="true">A</span>
+        <span class="brand__text">
+          <span class="brand__name">Adelaide University</span>
+          <span class="brand__tag">Volunteer and events · demo</span>
+        </span>
+      </a>
+      <nav class="nav-main" aria-label="Product">
+        <a href="index.html" aria-current="page">Review</a>
+        <a href="auth.html">Sign in</a>
+        <a href="student-explore.html">Explore</a>
+        <a href="admin-events.html">Admin</a>
+      </nav>
+    </div>
+  </header>
+  <section class="hero">
+    <span class="hero__shape" aria-hidden="true"></span>
+    <div class="hero__inner">
+      <h1>Secure volunteer and event coordination</h1>
+      <p>Must screens for the 15 Sep design review. Theme sampled from adelaide.edu.au (Dark Blue, Bright Blue, North Terrace Purple, Limestone).</p>
+      <a class="btn" href="auth.html">Start walkthrough</a>
+    </div>
+  </section>
+  <main class="page__main wrap">
+    <p class="wf-note">Click a card. Strip <code>css/annotations.css</code> when importing into a wireframing tool. Should/Could screens are not in this pack.</p>
+    <h2>Must screens</h2>
+    <div class="cluster">
+      <a class="card card--link" href="auth.html">
+        <div class="card__media">Screen 1</div>
+        <h3>Sign in / register</h3>
+        <p class="meta">US-M03. Role is a stored claim, not a self-serve Admin checkbox.</p>
+      </a>
+      <a class="card card--link" href="admin-events.html">
+        <div class="card__media">Screen 2</div>
+        <h3>Admin — event list</h3>
+        <p class="meta">US-M06–07. Delete asks for confirm.</p>
+      </a>
+      <a class="card card--link" href="admin-event-form.html">
+        <div class="card__media">Screen 3</div>
+        <h3>Admin — create / edit</h3>
+        <p class="meta">US-M04–05. Location and department required.</p>
+      </a>
+      <a class="card card--link" href="student-explore.html">
+        <div class="card__media">Screen 4</div>
+        <h3>Student — explore and filter</h3>
+        <p class="meta">US-M08–09. Filters are labelled fields.</p>
+      </a>
+      <a class="card card--link" href="student-event.html">
+        <div class="card__media">Screen 5</div>
+        <h3>Student — detail and recommend</h3>
+        <p class="meta">US-M10. Opened event is not in the rail.</p>
+      </a>
+      <a class="card card--link" href="../ui-kit.html">
+        <div class="card__media">Kit</div>
+        <h3>UI kit</h3>
+        <p class="meta">Colour, type, buttons, empty, error.</p>
+      </a>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div>
+        <p class="brand__name">Adelaide University</p>
+        <p>Industry Research Project A01 · C262T-4104</p>
+      </div>
+      <nav class="nav-main">
+        <a href="../ui-kit.html">UI kit</a>
+        <a href="README.md">Import notes</a>
+      </nav>
+      <p class="site-footer__legal">Demo Website — not an official university system. Tirkangkaku – Place of Learning. Provider PRV14404 · CRICOS 04249J (host numbers, for demo chrome only).</p>
+    </div>
+  </footer>
+</body>
+</html>

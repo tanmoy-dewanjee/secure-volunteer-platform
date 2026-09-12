@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Explore events — wireframe</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&amp;family=Roboto+Serif:opsz,wght@8..144,400;600&amp;display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/annotations.css" />
+</head>
+<body class="page">
+  <div class="demo-banner">Demo Website — <span>This is a student project prototype for Adelaide University Industry Research Project A01. It is not an official university system. Do not enter real personal data.</span></div>
+  <div class="utility">
+    <a href="student-explore.html">Students</a>
+    <a href="admin-events.html">Staff</a>
+    <a href="auth.html">Sign out</a>
+  </div>
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="brand" href="index.html">
+        <span class="brand__mark" aria-hidden="true">A</span>
+        <span class="brand__text">
+          <span class="brand__name">Adelaide University</span>
+          <span class="brand__tag">Volunteer and events · demo</span>
+        </span>
+      </a>
+      <nav class="nav-main">
+        <a href="index.html">Review</a>
+        <a href="student-explore.html" aria-current="page">Explore</a>
+        <a href="auth.html">Sign out</a>
+      </nav>
+    </div>
+  </header>
+  <main class="page__main wrap">
+    <p class="wf-note">Filters are labelled fields, not colour-only chips. Phone-width is a required check before sign-off. Empty state lives in the UI kit.</p>
+    <h1>Explore events</h1>
+    <p class="lead">Signed in as Sam Student</p>
+    <form class="filters" action="student-explore.html" method="get">
+      <div class="field">
+        <label for="q">Search</label>
+        <input id="q" name="q" placeholder="Title or description" />
+      </div>
+      <div class="field">
+        <label for="loc">Location</label>
+        <select id="loc" name="location">
+          <option value="">Any location</option>
+          <option selected>Adelaide City</option>
+          <option>Mawson Lakes</option>
+          <option>Magill</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="dept">Department</label>
+        <select id="dept" name="department">
+          <option value="">Any department</option>
+          <option>Student Life</option>
+          <option>Libraries</option>
+        </select>
+      </div>
+      <button class="btn" type="submit">Filter</button>
+    </form>
+    <div class="cluster cluster--after">
+      <a class="card card--link" href="student-event.html">
+        <div class="card__media">Adelaide City</div>
+        <div class="tag-row"><span class="tag">Adelaide City</span><span class="tag">Student Life</span></div>
+        <h3>Open Day wayfinding</h3>
+        <p class="meta">12 Oct 2026 · 09:00–16:00</p>
+        <p>Help visitors find lecture theatres and the student hub.</p>
+      </a>
+      <a class="card card--link" href="student-event.html">
+        <div class="card__media">Adelaide City</div>
+        <div class="tag-row"><span class="tag">Adelaide City</span><span class="tag">Libraries</span></div>
+        <h3>Library shelving sprint</h3>
+        <p class="meta">18 Oct 2026 · 14:00–17:00</p>
+        <p>Reshelve returns after the mid-semester rush.</p>
+      </a>
+      <a class="card card--link" href="student-event.html">
+        <div class="card__media">Mawson Lakes</div>
+        <div class="tag-row"><span class="tag">Mawson Lakes</span><span class="tag">Student Life</span></div>
+        <h3>Mawson Lakes welcome desk</h3>
+        <p class="meta">20 Oct 2026 · 10:00–13:00</p>
+        <p>Meet new students at the campus welcome desk.</p>
+      </a>
+    </div>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>Adelaide University · Student portal · <a href="../ui-kit.html">Empty / error states</a></p>
+    </div>
+  </footer>
+</body>
+</html>
