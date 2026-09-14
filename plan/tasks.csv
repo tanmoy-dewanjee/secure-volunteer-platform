@@ -1,0 +1,58 @@
+Title,Body,Status,Assignees,Labels,Milestone,Start date,Target date,Priority,Estimate
+M1 Team plan and RACI,Charter SLA roles communication. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs,M1,2026-08-16,2026-08-24,Must,5
+M1 Student journey notes,Explore filter recommend branding. Owner Mahima.,Done,Mahima Hiteshkumar Shah,docs;frontend,M1,2026-08-16,2026-08-24,Must,3
+M1 Backend assumptions,Entities and no-SSO. Owner Kavya.,Done,Kavyakumar Shaileshkumar Patel,docs;data,M1,2026-08-16,2026-08-24,Must,3
+M1 Security constraints,OWASP in DoD. Owner Jeet.,Done,Jeet Amish Dalal,docs;security,M1,2026-08-16,2026-08-24,Must,3
+M1 QA approach,Functional integration UAT. Owner Jay.,Done,Jay Mistry,docs;qa,M1,2026-08-16,2026-08-24,Must,3
+M1 Comms and artefact index,Contact grid and file index. Owner Nishanth.,Done,Nishanth Mogilicharla,docs,M1,2026-08-16,2026-08-24,Must,3
+M2 Proposal narrative,Schedule governance budget. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs,M2,2026-08-25,2026-09-04,Must,8
+M2 UI feature wording,Next.js Tailwind AU demo banner. Owner Mahima.,Done,Mahima Hiteshkumar Shah,docs;frontend,M2,2026-08-25,2026-09-04,Must,5
+M2 Data and API intent,Supabase entities. Owner Kavya.,Done,Kavyakumar Shaileshkumar Patel,docs;data,M2,2026-08-25,2026-09-04,Must,5
+M2 OWASP proposal wording,ASVS 5.0 RBAC audit. Owner Jeet.,Done,Jeet Amish Dalal,docs;security,M2,2026-08-25,2026-09-04,Must,5
+M2 Acceptance criteria,Evaluation table ACC ids. Owner Jay.,Done,Jay Mistry,docs;qa,M2,2026-08-25,2026-09-04,Must,5
+M2 Document control,Submission set Vercel Supabase. Owner Nishanth.,Done,Nishanth Mogilicharla,docs;ops,M2,2026-08-25,2026-09-04,Must,5
+M3 Working agreement,Culture inclusivity conflict path. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs;culture,M3,2026-09-09,2026-09-14,Must,3
+M3 Progress notes weeks 6-7,G4104_Progress_Report_6 and _7. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs;cadence,M3,2026-09-11,2026-09-15,Must,3
+M3 MoSCoW Must stories,US-M01 to US-M15. Owner Mahima.,Done,Mahima Hiteshkumar Shah,requirements;frontend,M3,2026-09-10,2026-09-14,Must,5
+M3 Data classification,APP-aligned classes. Owner Kavya.,Done,Kavyakumar Shaileshkumar Patel,data;privacy,M3,2026-09-12,2026-09-14,Must,3
+M3 ERD outline,Must entities stub Should Could. Owner Kavya.,Done,Kavyakumar Shaileshkumar Patel,data,M3,2026-09-14,2026-09-14,Must,5
+M3 Privacy notice,Demo collection notice. Owner Jeet.,Done,Jeet Amish Dalal,security;ethics,M3,2026-09-09,2026-09-11,Must,5
+M3 ASVS L1 scope,Families in scope. Owner Jeet.,Done,Jeet Amish Dalal,security,M3,2026-09-11,2026-09-11,Must,5
+M3 Synthetic data rule,No real PII. Owner Jeet.,Done,Jeet Amish Dalal,security;ethics,M3,2026-09-11,2026-09-11,Must,2
+M3 Test plan skeleton,ACC map. Owner Jay.,Done,Jay Mistry,qa,M3,2026-09-11,2026-09-11,Must,5
+M3 UAT consent,Withdraw anytime. Owner Jay.,Done,Jay Mistry,qa;ethics,M3,2026-09-13,2026-09-13,Must,3
+M3 Demo disclaimer copy,Banner text. Owner Nishanth.,Done,Nishanth Mogilicharla,docs;branding,M3,2026-09-11,2026-09-11,Must,2
+M3 AU branding notes,Demo use of brand. Owner Nishanth.,Done,Nishanth Mogilicharla,docs;branding,M3,2026-09-11,2026-09-13,Must,3
+M3 Artefact inventory,Index M1-M3. Owner Nishanth.,Done,Nishanth Mogilicharla,docs,M3,2026-09-13,2026-09-15,Must,2
+M4 Risk register,Likelihood impact table. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs;risk,M4,2026-09-15,2026-09-15,Must,3
+M4 MoSCoW sign-off pack,Client mentor decision table. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs;risk,M4,2026-09-15,2026-09-15,Must,3
+M4 Minutes and review pack,Walkthrough order and evidence list. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs;cadence,M4,2026-09-15,2026-09-15,Must,3
+M4 Milestone descriptions,M1-M8 register with descriptions. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs,M4,2026-09-15,2026-09-15,Must,2
+M4 Task CSV so far,Importable WBS M1-M8. Owner Tanmoy.,Done,Tanmoy Dewanjee,docs;board,M4,2026-09-15,2026-09-15,Must,3
+M4 Wireframes Must screens,Auth admin explore detail recommend HTML. Owner Mahima.,Done,Mahima Hiteshkumar Shah,design;frontend,M4,2026-09-15,2026-09-15,Must,8
+M4 UI kit,Colour type empty error banner. Owner Mahima.,Done,Mahima Hiteshkumar Shah,design;frontend,M4,2026-09-15,2026-09-15,Must,5
+M4 Schema,Must tables and stubs. Owner Kavya.,Done,Kavyakumar Shaileshkumar Patel,api;data,M4,2026-09-15,2026-09-15,Must,5
+M4 OpenAPI Must endpoints,Auth events recommendations audit. Owner Kavya.,Done,Kavyakumar Shaileshkumar Patel,api,M4,2026-09-15,2026-09-15,Must,8
+M4 ASVS mapping,Control-by-control L1. Owner Jeet.,Done,Jeet Amish Dalal,security,M4,2026-09-15,2026-09-15,Must,5
+M4 Threat model,STRIDE on Must surfaces. Owner Jeet.,Done,Jeet Amish Dalal,security,M4,2026-09-15,2026-09-15,Must,5
+M4 Test plan full,Unit RBAC UAT scripts. Owner Jay.,Done,Jay Mistry,qa,M4,2026-09-15,2026-09-15,Must,5
+M4 Architecture one-pager,Next.js Supabase Vercel. Owner Nishanth.,Done,Nishanth Mogilicharla,docs;ops,M4,2026-09-15,2026-09-15,Must,3
+M4 README template and env list,docs/README.template.md and .env.example. Owner Nishanth.,Done,Nishanth Mogilicharla,docs;ops,M4,2026-09-15,2026-09-15,Must,3
+M5 App shell and branding,Next.js shell AU theme demo banner. Owner Mahima.,Backlog,Mahima Hiteshkumar Shah,frontend,M5,2026-09-28,2026-10-09,Must,8
+M5 Prisma and auth API,Supabase schema session API. Owner Kavya.,Backlog,Kavyakumar Shaileshkumar Patel,backend,M5,2026-09-28,2026-10-09,Must,8
+M5 Headers hashing audit RBAC,Security foundation. Owner Jeet.,Backlog,Jeet Amish Dalal,security,M5,2026-09-28,2026-10-09,Must,8
+M5 Auth tests and smoke,Vitest Playwright. Owner Jay.,Backlog,Jay Mistry,qa,M5,2026-09-28,2026-10-09,Must,5
+M5 Vercel Hobby deploy,Live URL env docs. Owner Nishanth.,Backlog,Nishanth Mogilicharla,ops,M5,2026-09-28,2026-10-09,Must,5
+M5 Sprint backlog and integration,Board hygiene. Owner Tanmoy.,Backlog,Tanmoy Dewanjee,board,M5,2026-09-28,2026-10-09,Must,3
+M6 Admin event CRUD UI,Must screens. Owner Mahima.,Backlog,Mahima Hiteshkumar Shah,frontend,M6,2026-10-12,2026-10-23,Must,8
+M6 Student explore filter recommend UI,Must screens. Owner Mahima.,Backlog,Mahima Hiteshkumar Shah,frontend,M6,2026-10-12,2026-10-23,Must,8
+M6 Event API and recommendation queries,Must API. Owner Kavya.,Backlog,Kavyakumar Shaileshkumar Patel,backend,M6,2026-10-12,2026-10-23,Must,8
+M6 Validation ASVS on new routes,Security on Must. Owner Jeet.,Backlog,Jeet Amish Dalal,security,M6,2026-10-12,2026-10-23,Must,5
+M6 CRUD filter recommend RBAC tests,Automated plus UAT log. Owner Jay.,Backlog,Jay Mistry,qa,M6,2026-10-12,2026-10-23,Must,8
+M6 Vercel promotion and API docs,Live Must product. Owner Nishanth.,Backlog,Nishanth Mogilicharla,ops;docs,M6,2026-10-12,2026-10-23,Must,5
+M6 Burndown and scope-cut record,Cut Should not Must. Owner Tanmoy.,Backlog,Tanmoy Dewanjee,board,M6,2026-10-12,2026-10-23,Must,3
+M7 Profiles and applications,Should if M6 UAT green. Owner Mahima.,Backlog,Mahima Hiteshkumar Shah,frontend;backend,M7,2026-10-26,2026-10-30,Should,8
+M7 Group report,7200-8800 words. Owner Tanmoy.,Backlog,Tanmoy Dewanjee,report,M7,2026-10-26,2026-10-30,Must,13
+M7 Slide deck,Due 6 Nov. Owner Nishanth.,Backlog,Nishanth Mogilicharla,demo,M7,2026-11-02,2026-11-06,Must,8
+M8 Demo script and Q/A,20 plus 40 min. Owner Tanmoy.,Backlog,Tanmoy Dewanjee,demo,M8,2026-11-09,2026-11-27,Must,5
+M8 Shifts and attendance,Could stretch. Owner Kavya.,Backlog,Kavyakumar Shaileshkumar Patel,backend;frontend,M8,2026-11-09,2026-11-20,Could,8
