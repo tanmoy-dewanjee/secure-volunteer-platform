@@ -5,6 +5,7 @@ dist/
 .env
 .env.*
 !.env.example
+!mvp/.env.example
 .vercel
 .DS_Store
 Thumbs.db
