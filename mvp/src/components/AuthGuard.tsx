@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { SESSION_EVENT, getSession, rememberReturnPath } from "@/lib/session";
+import { SESSION_EVENT, apiSession, rememberReturnPath } from "@/lib/api";
 
 type AuthGuardProps = {
   children: ReactNode;
@@ -16,35 +16,37 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const session = getSession();
+    let cancelled = false;
 
-    if (!session) {
-      rememberReturnPath(pathname);
-      router.replace("/login");
-      return;
-    }
-
-    setAllowed(true);
-    setChecking(false);
-
-    const onSessionChange = () => {
-      if (!getSession()) {
+    const check = async () => {
+      const session = await apiSession();
+      if (cancelled) return;
+      if (!session) {
         rememberReturnPath(pathname);
         router.replace("/login");
+        return;
       }
+      setAllowed(true);
+      setChecking(false);
+    };
+
+    check();
+
+    const onSessionChange = () => {
+      check();
     };
 
     window.addEventListener(SESSION_EVENT, onSessionChange);
-    return () => window.removeEventListener(SESSION_EVENT, onSessionChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(SESSION_EVENT, onSessionChange);
+    };
   }, [pathname, router]);
 
   if (checking) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center bg-[#f3f1ed]">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-[#7C00E8]" />
-          <p className="mt-4 font-medium text-gray-600">Checking access...</p>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center bg-[#F9F2E6]">
+        <p className="font-medium text-[#140F50]">Checking access…</p>
       </div>
     );
   }

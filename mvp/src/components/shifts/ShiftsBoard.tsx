@@ -23,7 +23,7 @@ export default function ShiftsBoard() {
   const [statuses, setStatuses] = useState<Record<string, ShiftStatus>>({});
 
   useEffect(() => {
-    if (session) setStatuses(getShiftStatuses(session.username));
+    if (session) setStatuses(getShiftStatuses(session.email));
   }, [session]);
 
   const items = useMemo(
@@ -40,7 +40,7 @@ export default function ShiftsBoard() {
 
   const checkIn = (shiftId: string) => {
     if (!session) return;
-    setStatuses(setShiftStatus(session.username, shiftId, "Checked in"));
+    setStatuses(setShiftStatus(session.email, shiftId, "Checked in"));
   };
 
   return (

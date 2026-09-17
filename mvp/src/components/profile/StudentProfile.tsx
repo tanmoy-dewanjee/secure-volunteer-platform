@@ -44,10 +44,10 @@ export default function StudentProfile() {
 
   useEffect(() => {
     const overrides = loadOverrides();
-    const username = session?.username || demoStudentProfile.studentId;
+    const username = session?.email || demoStudentProfile.studentId;
     const displayName =
       overrides.fullName ||
-      session?.name ||
+      session?.displayName ||
       window.localStorage.getItem("demoRegisteredName") ||
       demoStudentProfile.fullName;
 

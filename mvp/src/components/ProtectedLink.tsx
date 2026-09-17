@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-import { getSession, rememberReturnPath } from "@/lib/session";
+import { apiSession, rememberReturnPath } from "@/lib/api";
 
 type ProtectedLinkProps = {
   href: string;
@@ -18,12 +18,12 @@ export default function ProtectedLink({
 }: ProtectedLinkProps) {
   const router = useRouter();
 
-  const handleClick = () => {
-    if (getSession()) {
+  const handleClick = async () => {
+    const session = await apiSession();
+    if (session) {
       router.push(href);
       return;
     }
-
     rememberReturnPath(href);
     router.push("/login");
   };

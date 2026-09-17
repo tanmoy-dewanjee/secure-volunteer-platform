@@ -4,26 +4,34 @@ import { useEffect, useState } from "react";
 
 import {
   SESSION_EVENT,
-  getSession,
-  signOut as clearSession,
-  type Session,
-} from "@/lib/session";
+  apiLogout,
+  apiSession,
+  type ApiUser,
+} from "@/lib/api";
 
 export function useSession() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<ApiUser | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const sync = () => setSession(getSession());
+    let cancelled = false;
+
+    const sync = async () => {
+      try {
+        const user = await apiSession();
+        if (!cancelled) setSession(user);
+      } catch {
+        if (!cancelled) setSession(null);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    };
+
     sync();
-    setReady(true);
-
     window.addEventListener(SESSION_EVENT, sync);
-    window.addEventListener("storage", sync);
-
     return () => {
+      cancelled = true;
       window.removeEventListener(SESSION_EVENT, sync);
-      window.removeEventListener("storage", sync);
     };
   }, []);
 
@@ -31,8 +39,9 @@ export function useSession() {
     session,
     ready,
     signedIn: Boolean(session),
-    signOut: () => {
-      clearSession();
+    isAdmin: session?.role === "admin",
+    signOut: async () => {
+      await apiLogout();
       setSession(null);
     },
   };

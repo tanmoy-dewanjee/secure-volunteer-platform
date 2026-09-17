@@ -35,7 +35,7 @@ export default function ApplicationsBoard() {
 
   useEffect(() => {
     if (session) {
-      setApplications(getApplications(session.username));
+      setApplications(getApplications(session.email));
     }
   }, [session]);
 
@@ -49,7 +49,7 @@ export default function ApplicationsBoard() {
 
   const handleWithdraw = (id: string) => {
     if (!session) return;
-    setApplications(withdrawApplication(session.username, id));
+    setApplications(withdrawApplication(session.email, id));
   };
 
   return (

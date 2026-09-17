@@ -159,7 +159,7 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
         : id;
     });
 
-    const result = addApplication(session.username, {
+    const result = addApplication(session.email, {
       eventId: event.id,
       eventTitle: event.title,
       role: selectedRole?.title || "Volunteer",
@@ -230,7 +230,7 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
             name="fullName"
             required
             maxLength={80}
-            defaultValue={session?.name || ""}
+            defaultValue={session?.displayName || ""}
             className={inputClass}
           />
         </div>
@@ -243,7 +243,7 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
             name="email"
             type="email"
             required
-            defaultValue={session ? `${session.username}@adelaide.edu.au` : ""}
+            defaultValue={session?.email || ""}
             className={inputClass}
           />
         </div>
