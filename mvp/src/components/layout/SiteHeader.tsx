@@ -14,18 +14,19 @@ type SiteHeaderProps = {
     | "shifts"
     | "profile"
     | "support"
-    | "students";
+    | "students"
+    | "admin";
 };
 
 export default function SiteHeader({ active = "home" }: SiteHeaderProps) {
   const router = useRouter();
-  const { session, ready, signedIn, signOut } = useSession();
+  const { session, ready, signedIn, isAdmin, signOut } = useSession();
 
   const linkClass = (id: SiteHeaderProps["active"]) =>
-    id === active ? "text-purple-700" : "hover:text-purple-700";
+    id === active ? "text-[#1448FF]" : "hover:text-[#1448FF]";
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    await signOut();
     router.push("/");
   };
 
@@ -34,45 +35,42 @@ export default function SiteHeader({ active = "home" }: SiteHeaderProps) {
       <DemoBanner />
 
       <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-x-6 gap-y-2 px-6 py-3 text-sm">
-          <Link href="/current-students" className="hover:text-purple-700 hover:underline">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-x-6 gap-y-2 px-6 py-3 text-sm text-[#140F50]">
+          <Link href="/current-students" className="hover:underline">
             Current students
           </Link>
-          <Link href="/volunteer-support" className="hover:text-purple-700 hover:underline">
+          <Link href="/volunteer-support" className="hover:underline">
             Volunteer support
           </Link>
           {!ready ? (
             <span className="text-gray-400">Account</span>
           ) : signedIn ? (
             <>
-              <Link href="/profile" className="font-semibold hover:text-purple-700">
-                {session?.username}
-              </Link>
+              <span className="font-semibold">
+                {session?.displayName} ({session?.role})
+              </span>
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="font-semibold hover:text-purple-700 hover:underline"
+                className="font-semibold hover:underline"
               >
                 Sign out
               </button>
             </>
           ) : (
-            <Link
-              href="/login"
-              className="font-semibold hover:text-purple-700 hover:underline"
-            >
+            <Link href="/login" className="font-semibold hover:underline">
               Sign in
             </Link>
           )}
         </div>
       </div>
 
-      <header className="border-b border-gray-200 bg-white">
+      <header className="border-b border-gray-200 bg-[#140F50] text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5">
           <Link href="/" className="block">
             <p className="text-2xl font-bold tracking-tight">Adelaide University</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Volunteer & Event Coordination
+            <p className="mt-1 text-sm text-white/80">
+              Volunteer and Event Coordination — demo
             </p>
           </Link>
 
@@ -80,34 +78,43 @@ export default function SiteHeader({ active = "home" }: SiteHeaderProps) {
             aria-label="Main navigation"
             className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 font-medium"
           >
-            <Link href="/" className={linkClass("home")}>
+            <Link href="/" className={active === "home" ? "underline" : "hover:underline"}>
               Home
             </Link>
-            <Link href="/discover" className={linkClass("discover")}>
+            <Link
+              href="/discover"
+              className={active === "discover" ? "underline" : "hover:underline"}
+            >
               Discover
             </Link>
-            <Link href="/my-applications" className={linkClass("applications")}>
+            {isAdmin ? (
+              <Link
+                href="/admin/events"
+                className={active === "admin" ? "underline" : "hover:underline"}
+              >
+                Admin events
+              </Link>
+            ) : null}
+            <Link
+              href="/my-applications"
+              className={linkClass("applications")}
+              style={{ color: "inherit" }}
+            >
               My Applications
-            </Link>
-            <Link href="/my-shifts" className={linkClass("shifts")}>
-              My Shifts
-            </Link>
-            <Link href="/profile" className={linkClass("profile")}>
-              Profile
             </Link>
             {signedIn ? (
               <Link
-                href="/profile"
-                className="bg-black px-5 py-3 text-white transition hover:bg-purple-700"
+                href="/discover"
+                className="bg-[#1448FF] px-5 py-3 text-white transition hover:bg-[#0C2B99]"
               >
-                Your portal
+                Explore events
               </Link>
             ) : (
               <Link
                 href="/login"
-                className="bg-black px-5 py-3 text-white transition hover:bg-purple-700"
+                className="bg-[#1448FF] px-5 py-3 text-white transition hover:bg-[#0C2B99]"
               >
-                Student Portal
+                Sign in
               </Link>
             )}
           </nav>
