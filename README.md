@@ -23,6 +23,17 @@ The design pack (wireframes, schema, OpenAPI, ASVS, tests) is ready for the 15 S
 
 Next.js, TypeScript, Tailwind CSS, Supabase (PostgreSQL + Auth), Vercel Hobby ($0).
 
+## MVP frontend
+
+The student-portal Next.js prototype lives in `mvp/`. From that folder:
+
+```bash
+npm install
+npm run dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
 ## Preview the Must screens
 
 No application server yet. From the repo root:
