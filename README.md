@@ -23,16 +23,23 @@ The design pack (wireframes, schema, OpenAPI, ASVS, tests) is ready for the 15 S
 
 Next.js, TypeScript, Tailwind CSS, Supabase (PostgreSQL + Auth), Vercel Hobby ($0).
 
-## MVP frontend
+## App (`mvp/`)
 
-The student-portal Next.js prototype lives in `mvp/`. From that folder:
+Must demo app (UI, API, in-memory store, tests) lives in `mvp/`. From that folder:
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
 Then open [http://localhost:3000](http://localhost:3000).
+
+Demo sign-in: `admin@demo.local` / `AdminPass1234` or `student@demo.local` / `StudentPass1234`.
+
+```bash
+npm test
+```
 
 ## Preview the Must screens
 
