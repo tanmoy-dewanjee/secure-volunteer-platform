@@ -67,7 +67,7 @@ export default function SiteHeader({ active = "home" }: SiteHeaderProps) {
         </div>
       </div>
 
-      <header className="border-b border-gray-200 bg-white">
+      <header className="site-header border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-5">
           <Link href="/" className="block">
             <p className="text-2xl font-bold tracking-tight">Adelaide University</p>

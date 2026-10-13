@@ -8,6 +8,7 @@ import {
   signOut as clearSession,
   type Session,
 } from "@/lib/session";
+import { signOutStudentSession } from "@/utils/supabase/session";
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null);
@@ -32,6 +33,7 @@ export function useSession() {
     ready,
     signedIn: Boolean(session),
     signOut: () => {
+      void signOutStudentSession();
       clearSession();
       setSession(null);
     },

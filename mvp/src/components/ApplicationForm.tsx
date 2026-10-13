@@ -9,7 +9,7 @@ import {
 } from "@/data/application-fields";
 import { getEventHost, type Event } from "@/data/events";
 import { useSession } from "@/hooks/useSession";
-import { addApplication } from "@/lib/applications";
+import { persistApplication } from "@/lib/applications";
 
 type ApplicationFormProps = {
   event: Event;
@@ -126,7 +126,7 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
     });
   };
 
-  const handleSubmit = (formEvent: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (formEvent: FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
     if (!session) return;
 
@@ -148,6 +148,11 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
           : String(value || "");
     }
 
+    const resume = form.get("resume");
+    if (resume instanceof File && resume.name) {
+      extraAnswers["Resume"] = resume.name;
+    }
+
     const orderedShiftIds = preferredShiftId
       ? [preferredShiftId, ...shiftIds.filter((id) => id !== preferredShiftId)]
       : shiftIds;
@@ -159,7 +164,10 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
         : id;
     });
 
-    const result = addApplication(session.username, {
+    const result = await persistApplication(
+      session.username,
+      session.name || session.username,
+      {
       eventId: event.id,
       eventTitle: event.title,
       role: selectedRole?.title || "Volunteer",
@@ -411,6 +419,24 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
               </label>
             ))}
           </div>
+        </fieldset>
+      ) : null}
+
+      {event.askResume ? (
+        <fieldset>
+          <legend className="text-xl font-semibold">Resume *</legend>
+          <p className="mt-2 text-sm text-gray-600">
+            This club asked volunteers to attach a resume. The prototype stores
+            the file name only — do not upload a real document with personal data.
+          </p>
+          <input
+            id="resume"
+            name="resume"
+            type="file"
+            required
+            accept=".pdf,.doc,.docx"
+            className="mt-4 w-full border border-gray-300 bg-white px-4 py-3 file:mr-4 file:border-0 file:bg-purple-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white"
+          />
         </fieldset>
       ) : null}
 

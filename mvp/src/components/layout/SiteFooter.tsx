@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function SiteFooter() {
   return (
-    <footer className="bg-black text-white">
+    <footer className="site-footer bg-black text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-4">
         <div>
           <h2 className="text-xl font-semibold">Adelaide University</h2>

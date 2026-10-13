@@ -69,12 +69,12 @@ export default function LandingPage() {
         <div className="landing-orb-slow pointer-events-none absolute -bottom-24 left-[18%] h-40 w-40 rounded-full bg-[#18a999]/80" />
         <div className="landing-orb pointer-events-none absolute right-[22%] top-24 h-16 w-16 rounded-full bg-[#ee626b]" />
 
-        <div className="relative mx-auto grid max-w-7xl items-center gap-16 px-6 py-20 lg:grid-cols-2 lg:py-28">
+        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-6 py-10 lg:grid-cols-2 lg:py-12">
           <div>
-            <p className="landing-reveal text-sm font-bold uppercase tracking-[0.22em] text-purple-700">
+            <p className="landing-reveal text-xs font-bold uppercase tracking-[0.22em] text-purple-700">
               Student Volunteer Portal
             </p>
-            <h1 className="landing-reveal landing-delay-1 mt-5 max-w-xl text-5xl font-semibold leading-[1.05] tracking-tight md:text-6xl">
+            <h1 className="landing-reveal landing-delay-1 mt-3 max-w-xl text-3xl font-semibold leading-[1.1] tracking-tight md:text-4xl">
               Volunteer with the
               <span className="block text-purple-700">clubs that move campus.</span>
             </h1>
@@ -124,7 +124,7 @@ export default function LandingPage() {
           {featured ? (
             <Link
               href={`/events/${featured.id}`}
-              className="landing-reveal landing-delay-2 group relative isolate min-h-[420px] overflow-hidden bg-white shadow-xl"
+              className="landing-reveal landing-delay-2 group relative isolate min-h-[240px] overflow-hidden bg-white shadow-xl lg:min-h-[280px]"
             >
               <Image
                 src={featured.bannerImage}
@@ -157,7 +157,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="grid gap-8 border-y border-gray-200 py-10 md:grid-cols-3">
           <div className="landing-reveal">
             <p className="text-4xl font-semibold">{studentClubs.length}</p>
@@ -174,7 +174,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#f3f1ed] py-20">
+      <section className="bg-[#f3f1ed] py-12">
         <div className="mx-auto max-w-7xl px-6">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
             Start here
@@ -203,14 +203,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20">
+      <section className="py-12">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
                 Student clubs
               </p>
-              <h2 className="mt-3 text-4xl font-semibold">Filter later by the club you care about</h2>
+              <h2 className="mt-3 text-3xl font-semibold">Filter later by the club you care about</h2>
             </div>
             <Link
               href="/discover"
@@ -239,7 +239,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-[#171717] py-20 text-white">
+      <section className="bg-[#171717] py-12 text-white">
         <div className="mx-auto max-w-7xl px-6">
           <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-300">
             How it works
@@ -262,14 +262,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20">
+      <section className="py-12">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
                 Happening soon
               </p>
-              <h2 className="mt-3 text-4xl font-semibold">A few events to start with</h2>
+              <h2 className="mt-3 text-3xl font-semibold">A few events to start with</h2>
             </div>
             <Link
               href="/discover"

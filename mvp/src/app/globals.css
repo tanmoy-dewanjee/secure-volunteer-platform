@@ -138,13 +138,95 @@ body {
   box-shadow: 0 18px 40px rgba(23, 23, 23, 0.08);
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes result-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result-card {
+  animation: result-card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes filter-drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.filter-drawer {
+  animation: filter-drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+::view-transition-old(root) {
+  animation: vt-out 0.28s ease both;
+}
+
+::view-transition-new(root) {
+  animation: vt-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes vt-out {
+  to {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(-10px) scale(0.985);
+  }
+}
+
+@keyframes vt-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(22px) scale(0.98);
+  }
+}
+
+.site-banner {
+  view-transition-name: site-banner;
+}
+
+.site-header {
+  view-transition-name: site-header;
+}
+
+.site-footer {
+  view-transition-name: site-footer;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .browse-fade-up,
   .landing-reveal,
   .landing-orb,
   .landing-orb-slow,
   .landing-kenburns,
-  .landing-marquee {
+  .landing-marquee,
+  .page-enter,
+  .result-card,
+  .filter-drawer {
     animation: none;
   }
 
@@ -155,5 +237,10 @@ body {
 
   .landing-card:hover {
     transform: none;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }

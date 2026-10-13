@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
+import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import { useSession } from "@/hooks/useSession";
+import { disableMfa, isMfaEnabled } from "@/lib/mfa";
 import {
   demoStudentProfile,
   getAverageRating,
@@ -40,6 +42,8 @@ export default function StudentProfile() {
   const { session } = useSession();
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [mfaOn, setMfaOn] = useState(false);
+  const [setupMfa, setSetupMfa] = useState(false);
   const [profile, setProfile] = useState<StudentProfileData>(demoStudentProfile);
 
   useEffect(() => {
@@ -58,6 +62,17 @@ export default function StudentProfile() {
       fullName: displayName,
       email: overrides.email || `${username}@adelaide.edu.au`,
     });
+    setMfaOn(isMfaEnabled(username));
+
+    if (!session?.username) return;
+    void fetch(`/api/profile?username=${encodeURIComponent(session.username)}`)
+      .then((response) => response.json())
+      .then((payload: { source?: string; profile?: StudentProfileData }) => {
+        if (payload.source === "supabase" && payload.profile) {
+          setProfile(payload.profile);
+        }
+      })
+      .catch(() => undefined);
   }, [session]);
 
   const progress = getLevelProgress(profile.points);
@@ -85,6 +100,13 @@ export default function StudentProfile() {
       accessibility: profile.accessibility,
     };
     window.localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(next));
+    if (session?.username) {
+      void fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: session.username, profile: next }),
+      });
+    }
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);
   };
@@ -102,13 +124,13 @@ export default function StudentProfile() {
   return (
     <div className="bg-white text-[#171717]">
       <section className="bg-[#f3f1ed]">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-700">
             Student profile
           </p>
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
+              <h1 className="text-3xl font-semibold tracking-tight">
                 {profile.fullName}
               </h1>
               <p className="mt-3 text-gray-600">
@@ -175,7 +197,7 @@ export default function StudentProfile() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="mx-auto grid max-w-7xl gap-12 px-6 py-10 lg:grid-cols-[1.15fr_0.85fr]">
         <div>
           <h2 className="text-2xl font-semibold">Why clubs look at this profile</h2>
           <p className="mt-4 leading-7 text-gray-700">
@@ -365,6 +387,49 @@ export default function StudentProfile() {
               </p>
             ) : null}
           </form>
+
+          <div className="mt-12 border border-gray-200 p-6">
+            <h2 className="text-2xl font-semibold">Two-factor authentication</h2>
+            <p className="mt-3 leading-7 text-gray-700">
+              Use an authenticator app (Google Authenticator, Authy or
+              1Password). The portal never shows a live one-time code.
+            </p>
+            {mfaOn && !setupMfa ? (
+              <div className="mt-5">
+                <p className="font-semibold text-green-800">2FA is enabled</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    disableMfa(profile.studentId);
+                    setMfaOn(false);
+                  }}
+                  className="mt-4 border border-black px-5 py-2 text-sm font-semibold hover:bg-[#f3f1ed]"
+                >
+                  Turn off 2FA
+                </button>
+              </div>
+            ) : setupMfa ? (
+              <div className="mt-5">
+                <TwoFactorPanel
+                  username={profile.studentId}
+                  mode="enroll"
+                  onVerified={() => {
+                    setMfaOn(true);
+                    setSetupMfa(false);
+                  }}
+                  onCancel={() => setSetupMfa(false)}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSetupMfa(true)}
+                className="mt-5 bg-black px-5 py-3 font-semibold text-white hover:bg-purple-700"
+              >
+                Set up 2FA
+              </button>
+            )}
+          </div>
         </div>
 
         <aside className="space-y-8">

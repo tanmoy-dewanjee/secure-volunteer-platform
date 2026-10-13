@@ -164,6 +164,30 @@ export function buildBrowseRows(
   return rows.filter((row) => row.events.length > 0);
 }
 
+export function getRecommendedEvents(
+  allEvents: Event[],
+  history: ViewRecord[],
+  limit = 6
+) {
+  const eventsById = new Map(allEvents.map((event) => [event.id, event]));
+  const viewedEvents = history
+    .map((record) => eventsById.get(record.eventId))
+    .filter((event): event is Event => Boolean(event));
+  const viewedIds = new Set(viewedEvents.map((event) => event.id));
+  const unseen = allEvents.filter((event) => !viewedIds.has(event.id));
+
+  if (viewedEvents.length === 0) return [];
+
+  return [...unseen]
+    .map((event) => ({
+      event,
+      score: scoreCandidate(event, viewedEvents.slice(0, 8)),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((entry) => entry.event);
+}
+
 export function getSimilarEvents(event: Event, allEvents: Event[], limit = 8) {
   return allEvents
     .filter((candidate) => candidate.id !== event.id)

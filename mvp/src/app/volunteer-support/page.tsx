@@ -36,11 +36,11 @@ export default function VolunteerSupportPage() {
       <SiteHeader active="support" />
 
       <section className="bg-[#f3f1ed]">
-        <div className="mx-auto max-w-7xl px-6 py-16">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-700">
             Help
           </p>
-          <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight">
             Volunteer support
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-gray-700">
@@ -50,7 +50,7 @@ export default function VolunteerSupportPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-12 px-6 py-16 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="mx-auto grid max-w-7xl gap-12 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-5">
           {topics.map((topic) => (
             <article key={topic.title} className="border border-gray-200 p-6">

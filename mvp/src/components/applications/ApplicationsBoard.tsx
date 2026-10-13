@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useSession } from "@/hooks/useSession";
 import {
-  getApplications,
+  fetchApplications,
+  persistWithdraw,
   seedApplications,
-  withdrawApplication,
   type ApplicationStatus,
   type VolunteerApplication,
 } from "@/lib/applications";
@@ -34,9 +34,8 @@ export default function ApplicationsBoard() {
     useState<VolunteerApplication[]>(seedApplications);
 
   useEffect(() => {
-    if (session) {
-      setApplications(getApplications(session.username));
-    }
+    if (!session) return;
+    void fetchApplications(session.username).then(setApplications);
   }, [session]);
 
   const visible = useMemo(
@@ -49,17 +48,17 @@ export default function ApplicationsBoard() {
 
   const handleWithdraw = (id: string) => {
     if (!session) return;
-    setApplications(withdrawApplication(session.username, id));
+    void persistWithdraw(session.username, id).then(setApplications);
   };
 
   return (
     <>
       <section className="bg-[#f3f1ed]">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-700">
             Student / Volunteer Portal
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             My Applications
           </h1>
           <p className="mt-5 max-w-2xl leading-7 text-gray-600">
@@ -69,7 +68,7 @@ export default function ApplicationsBoard() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-5">
           <div>
             <h2 className="text-3xl font-semibold">Application history</h2>

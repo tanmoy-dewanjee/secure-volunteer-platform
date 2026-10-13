@@ -4,10 +4,13 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { useSession } from "@/hooks/useSession";
+import { isMfaEnabled } from "@/lib/mfa";
 import { signIn, takeReturnPath } from "@/lib/session";
+import { signInStudentSession } from "@/utils/supabase/session";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -24,6 +27,10 @@ export default function LoginPage() {
     const [popupTitle, setPopupTitle] = useState("");
     const [popupMessage, setPopupMessage] = useState("");
     const [showPopup, setShowPopup] = useState(false);
+    const [authStep, setAuthStep] = useState<"password" | "enroll" | "verify">(
+        "password"
+    );
+    const [accountName, setAccountName] = useState("");
 
     // Demo student ID format.
     // Example: a1991246
@@ -39,7 +46,7 @@ export default function LoginPage() {
     };
 
     // Check the login fields.
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         let valid = true;
@@ -91,16 +98,55 @@ export default function LoginPage() {
             return;
         }
 
-        // Demo session only.
-        // Supabase Auth will replace this later.
+        const nextUsername = username.trim().toLowerCase();
+
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: nextUsername,
+                    password,
+                }),
+            });
+            const payload = (await response.json()) as {
+                source?: string;
+                username?: string;
+                name?: string;
+                error?: string;
+            };
+            if (!response.ok && payload.source !== "local") {
+                openPopup(
+                    "Sign in unsuccessful",
+                    payload.error || "Those details were not recognised."
+                );
+                return;
+            }
+            if (payload.username) {
+                setUsername(payload.username);
+            }
+            setAccountName(payload.name || "");
+            setAuthStep(
+                isMfaEnabled(payload.username || nextUsername)
+                    ? "verify"
+                    : "enroll"
+            );
+        } catch {
+            setAuthStep(isMfaEnabled(nextUsername) ? "verify" : "enroll");
+        }
+    };
+
+    const finishSignIn = async () => {
+        await signInStudentSession(username.trim().toLowerCase(), password);
         signIn({
             username: username.trim().toLowerCase(),
+            name: accountName || undefined,
             keepSignedIn,
         });
 
         openPopup(
             "Sign in successful",
-            "You are now signed in to the Student / Volunteer Portal."
+            "Two-factor authentication is active. You are now signed in to the Student / Volunteer Portal."
         );
 
         setTimeout(() => {
@@ -113,7 +159,7 @@ export default function LoginPage() {
             <SiteHeader />
 
             {/* Login area */}
-            <section className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <section className="mx-auto grid max-w-7xl gap-10 px-6 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
 
                 {/* Left information */}
                 <div className="hidden lg:block">
@@ -121,7 +167,7 @@ export default function LoginPage() {
                         Student / Volunteer Portal
                     </p>
 
-                    <h1 className="mt-5 max-w-lg text-5xl font-semibold leading-tight">
+                    <h1 className="mt-4 max-w-lg text-3xl font-semibold leading-tight md:text-4xl">
                         Your volunteering,
                         <span className="block text-[#7C00E8]">
                             all in one place.
@@ -204,18 +250,28 @@ export default function LoginPage() {
                         Secure access
                     </p>
 
-                    <h2 className="mt-3 text-4xl font-semibold">
+                    {authStep !== "password" ? (
+                        <TwoFactorPanel
+                            username={username.trim().toLowerCase()}
+                            mode={authStep}
+                            onVerified={finishSignIn}
+                            onCancel={() => setAuthStep("password")}
+                        />
+                    ) : (
+                    <>
+                    <h2 className="mt-3 text-3xl font-semibold">
                         Sign in
                     </h2>
 
                     <p className="mt-4 leading-7 text-gray-600">
-                        Enter your university username and demo password.
+                        Enter your university username and password. The next
+                        step is authenticator-app two-factor authentication.
                     </p>
 
                     <form
                         onSubmit={handleSubmit}
                         noValidate
-                        className="mt-9 space-y-7"
+                        className="mt-8 space-y-6"
                     >
                         {/* University username */}
                         <div>
@@ -331,7 +387,7 @@ export default function LoginPage() {
                             type="submit"
                             className="w-full bg-black px-6 py-4 text-lg font-semibold text-white transition hover:bg-[#7C00E8] focus:outline-none focus:ring-2 focus:ring-[#7C00E8] focus:ring-offset-2"
                         >
-                            Sign in
+                            Continue to 2FA
                         </button>
                     </form>
 
@@ -351,16 +407,18 @@ export default function LoginPage() {
                     {/* Demo notice */}
                     <div className="mt-8 border-l-4 border-[#7C00E8] bg-[#f4ecff] p-4">
                         <p className="font-semibold text-purple-900">
-                            Demo authentication
+                            Authenticator 2FA
                         </p>
 
                         <p className="mt-1 text-sm leading-6 text-gray-700">
                             This educational prototype does not connect to
                         Adelaide University&apos;s production Single Sign-On.
-                        Real authentication and session handling will use
-                        Supabase Auth.
+                        Sign-in uses a password plus TOTP from an authenticator
+                        app. The portal never displays a live one-time code.
                     </p>
                     </div>
+                    </>
+                    )}
                         </>
                     )}
                 </div>

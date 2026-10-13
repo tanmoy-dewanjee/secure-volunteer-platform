@@ -1,10 +1,16 @@
+import type { ApplicationField } from "@/data/application-fields";
 import {
   getOrganisation,
   hostTypeLabels,
   type HostType,
 } from "@/data/organisations";
 
-export type EventStatus = "Open" | "Closed" | "Full" | "Coming soon";
+export type EventStatus =
+  | "Open"
+  | "Closed"
+  | "Full"
+  | "Coming soon"
+  | "In progress";
 
 export type VolunteerRole = {
   id: string;
@@ -47,6 +53,10 @@ export type Event = {
   trendingScore: number;
   applicationDeadline: string;
   accessibilityNotes: string;
+  lat?: number;
+  lng?: number;
+  askResume?: boolean;
+  customFields?: ApplicationField[];
 };
 
 export const events: Event[] = [
@@ -116,6 +126,8 @@ export const events: Event[] = [
     posterImage:
       "https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=900&q=80",
     featured: true,
+    lat: -34.9206,
+    lng: 138.5986,
     trendingScore: 98,
     applicationDeadline: "1 November 2026",
     accessibilityNotes:
@@ -403,16 +415,18 @@ export const events: Event[] = [
     tags: ["Community", "Hands-on", "Service"],
     description:
       "A verified community-partner shift packing hampers and sorting donations with Foodbank SA. Suitable for volunteers who want a practical off-campus contribution.",
-    date: "8 November 2026",
+    date: "12 October 2026",
     startTime: "9:00 AM",
     endTime: "12:30 PM",
     campus: "Adelaide City",
-    location: "Foodbank SA, Pooraka (transport notes provided after approval)",
+    location: "Foodbank SA, 1-3 Churchill Road North, Dry Creek SA",
     organisationId: "rotaract",
     contactEmail: "partners@example.edu.au",
     capacity: 15,
     placesAvailable: 6,
-    status: "Open",
+    status: "In progress",
+    lat: -34.8334,
+    lng: 138.6115,
     requirements: [
       "Closed-toe shoes",
       "Ability to stand for the shift or request a seated role",
@@ -445,8 +459,9 @@ export const events: Event[] = [
     posterImage:
       "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=900&q=80",
     trendingScore: 73,
-    applicationDeadline: "1 November 2026",
+    applicationDeadline: "1 October 2026",
     accessibilityNotes: "Warehouse environment; seated sorting roles available.",
+    askResume: true,
   },
   {
     id: "science-open-night",
@@ -784,7 +799,34 @@ export const categoryOptions = [
   "Sport",
 ] as const;
 
-export const statusOptions = ["Open", "Coming soon", "Full", "Closed"] as const;
+export const statusOptions = [
+  "Open",
+  "In progress",
+  "Coming soon",
+  "Full",
+  "Closed",
+] as const;
+
+export const campusCoordinates: Record<string, { lat: number; lng: number }> = {
+  "Adelaide City": { lat: -34.9205, lng: 138.6062 },
+  Magill: { lat: -34.9133, lng: 138.6719 },
+  "Mawson Lakes": { lat: -34.8106, lng: 138.6126 },
+  Waite: { lat: -34.9694, lng: 138.6358 },
+  Roseworthy: { lat: -34.5278, lng: 138.6886 },
+  "Mount Gambier": { lat: -37.8284, lng: 140.7804 },
+  Whyalla: { lat: -33.038, lng: 137.585 },
+};
+
+export function getEventCoordinates(event: Event) {
+  if (typeof event.lat === "number" && typeof event.lng === "number") {
+    return { lat: event.lat, lng: event.lng };
+  }
+  return campusCoordinates[event.campus] ?? campusCoordinates["Adelaide City"];
+}
+
+export function canApplyToEvent(event: Event) {
+  return event.status === "Open" && event.placesAvailable > 0;
+}
 
 export function getAllEventTags() {
   return [...new Set(events.flatMap((event) => event.tags))].sort();

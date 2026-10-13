@@ -25,11 +25,11 @@ export default function CurrentStudentsPage() {
 
       <section className="relative overflow-hidden bg-[#f3f1ed]">
         <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-purple-700" />
-        <div className="relative mx-auto max-w-7xl px-6 py-20">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
+        <div className="relative mx-auto max-w-7xl px-6 py-8">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-700">
             Current students
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">
+          <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-tight md:text-4xl">
             Your campus volunteering, in one student portal.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-700">
@@ -54,7 +54,7 @@ export default function CurrentStudentsPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-20">
+      <section className="mx-auto max-w-7xl px-6 py-10">
         <h2 className="text-3xl font-semibold">How current students use the portal</h2>
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {steps.map((step, index) => (
@@ -67,7 +67,7 @@ export default function CurrentStudentsPage() {
         </div>
       </section>
 
-      <section className="bg-[#171717] py-16 text-white">
+      <section className="bg-[#171717] py-10 text-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 md:grid-cols-3">
           <div>
             <h2 className="text-xl font-semibold">Student username</h2>

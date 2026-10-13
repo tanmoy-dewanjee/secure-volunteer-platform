@@ -9,6 +9,7 @@ import {
   seedShifts,
   setShiftStatus,
   type ShiftStatus,
+  type VolunteerShiftAssignment,
 } from "@/data/shifts";
 import { useSession } from "@/hooks/useSession";
 
@@ -21,18 +22,38 @@ function statusClass(status: ShiftStatus) {
 export default function ShiftsBoard() {
   const { session } = useSession();
   const [statuses, setStatuses] = useState<Record<string, ShiftStatus>>({});
+  const [assignments, setAssignments] =
+    useState<VolunteerShiftAssignment[]>(seedShifts);
 
   useEffect(() => {
-    if (session) setStatuses(getShiftStatuses(session.username));
+    if (!session) return;
+    setStatuses(getShiftStatuses(session.username));
+    void fetch(`/api/shifts?username=${encodeURIComponent(session.username)}`)
+      .then((response) => response.json())
+      .then(
+        (payload: {
+          shifts?: Array<VolunteerShiftAssignment & { status?: ShiftStatus }>;
+        }) => {
+          if (Array.isArray(payload.shifts) && payload.shifts.length > 0) {
+            setAssignments(payload.shifts);
+            const remoteStatuses: Record<string, ShiftStatus> = {};
+            for (const shift of payload.shifts) {
+              if (shift.status) remoteStatuses[shift.id] = shift.status;
+            }
+            setStatuses((current) => ({ ...remoteStatuses, ...current }));
+          }
+        }
+      )
+      .catch(() => undefined);
   }, [session]);
 
   const items = useMemo(
     () =>
-      seedShifts.map((shift) => ({
+      assignments.map((shift) => ({
         ...shift,
         status: resolveShiftStatus(shift, statuses),
       })),
-    [statuses]
+    [assignments, statuses]
   );
 
   const upcoming = items.filter((shift) => shift.status !== "Completed");
@@ -41,16 +62,25 @@ export default function ShiftsBoard() {
   const checkIn = (shiftId: string) => {
     if (!session) return;
     setStatuses(setShiftStatus(session.username, shiftId, "Checked in"));
+    void fetch("/api/shifts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: session.username,
+        shiftId,
+        status: "Checked in",
+      }),
+    });
   };
 
   return (
     <>
       <section className="bg-[#f3f1ed]">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-700">
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-700">
             Student / Volunteer Portal
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             My Shifts
           </h1>
           <p className="mt-5 max-w-2xl leading-7 text-gray-600">
@@ -60,7 +90,7 @@ export default function ShiftsBoard() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h2 className="text-3xl font-semibold">Upcoming</h2>
           <Link

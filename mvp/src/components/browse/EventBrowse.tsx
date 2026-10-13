@@ -1,30 +1,24 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
-import EventPoster from "@/components/browse/EventPoster";
-import EventRow from "@/components/browse/EventRow";
-import FilterChips from "@/components/browse/FilterChips";
-import HeroBillboard from "@/components/browse/HeroBillboard";
-import {
-  campusOptions,
-  categoryOptions,
-  events,
-  getAllEventTags,
-  statusOptions,
-} from "@/data/events";
+import EventGrid from "@/components/browse/EventGrid";
+import FilterPanel from "@/components/browse/FilterPanel";
 import { studentClubs } from "@/data/organisations";
-import { useViewHistory } from "@/hooks/useViewHistory";
+import { useEventCatalog } from "@/hooks/useEventCatalog";
 import {
+  activeFilterCount,
+  countWithPlaces,
+  defaultFilters,
   filterAndSortEvents,
+  filtersFromSearchParams,
+  getFacetCounts,
   hasActiveFilters,
-  parseListParam,
-  toggleListValue,
+  searchParamsFromFilters,
+  type EventFilters,
   type EventSort,
 } from "@/lib/event-filters";
-import { buildBrowseRows } from "@/lib/recommendations";
-import { clearViewHistory } from "@/lib/view-history";
 
 const sortOptions: { value: EventSort; label: string }[] = [
   { value: "trending", label: "Trending" },
@@ -33,367 +27,336 @@ const sortOptions: { value: EventSort; label: string }[] = [
   { value: "az", label: "A to Z" },
 ];
 
-export default function EventBrowse() {
+export default function EventBrowse({
+  initialQuery = "",
+}: {
+  initialQuery?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const history = useViewHistory();
-  const allTags = getAllEventTags();
-
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const [campuses, setCampuses] = useState(
-    parseListParam(searchParams.get("campus"))
-  );
-  const [categories, setCategories] = useState(
-    parseListParam(searchParams.get("category"))
-  );
-  const [clubIds, setClubIds] = useState(
-    parseListParam(searchParams.get("club"))
-  );
-  const [statuses, setStatuses] = useState(
-    parseListParam(searchParams.get("status"))
-  );
-  const [sort, setSort] = useState<EventSort>(
-    (searchParams.get("sort") as EventSort) || "trending"
-  );
-  const [tags, setTags] = useState(parseListParam(searchParams.get("tag")));
-  const [tagQuery, setTagQuery] = useState("");
-
-  const filters = useMemo(
-    () => ({
-      search,
-      campuses,
-      categories,
-      clubIds,
-      tags,
-      statuses,
-      sort,
-    }),
-    [search, campuses, categories, clubIds, tags, statuses, sort]
-  );
+  const { events } = useEventCatalog();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [query, setQuery] = useState(initialQuery);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (search.trim()) params.set("q", search.trim());
-    if (campuses.length) params.set("campus", campuses.join(","));
-    if (categories.length) params.set("category", categories.join(","));
-    if (clubIds.length) params.set("club", clubIds.join(","));
-    if (statuses.length) params.set("status", statuses.join(","));
-    if (sort !== "trending") params.set("sort", sort);
-    if (tags.length) params.set("tag", tags.join(","));
+    setQuery(initialQuery);
+  }, [initialQuery]);
 
-    const next = params.toString();
-    if (next === searchParams.toString()) return;
-    router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
-  }, [
-    search,
-    campuses,
-    categories,
-    clubIds,
-    statuses,
-    sort,
-    tags,
-    pathname,
-    router,
-    searchParams,
-  ]);
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const next = window.location.search.replace(/^\?/, "");
+      setQuery((current) => (current === next ? current : next));
+    };
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
+  }, []);
 
-  const featured =
-    events.find((event) => event.featured) ??
-    [...events].sort((a, b) => b.trendingScore - a.trendingScore)[0];
+  const filters = useMemo(
+    () => filtersFromSearchParams(new URLSearchParams(query)),
+    [query]
+  );
+  const [searchInput, setSearchInput] = useState(filters.search);
+
+  useEffect(() => {
+    setSearchInput(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      if (searchInput === filters.search) return;
+      commitFilters({ ...filters, search: searchInput });
+    }, 220);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
+
+  const commitFilters = (next: EventFilters) => {
+    const nextQuery = searchParamsFromFilters(next);
+    setQuery(nextQuery);
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  };
 
   const filteredEvents = useMemo(
     () => filterAndSortEvents(events, filters),
-    [filters]
+    [events, filters]
+  );
+
+  const facetCounts = useMemo(
+    () => ({
+      campuses: getFacetCounts(events, filters, "campuses"),
+      categories: getFacetCounts(events, filters, "categories"),
+      clubIds: getFacetCounts(events, filters, "clubIds"),
+      statuses: getFacetCounts(events, filters, "statuses"),
+      tags: getFacetCounts(events, filters, "tags"),
+      withPlaces: countWithPlaces(events, filters),
+    }),
+    [events, filters]
   );
 
   const filtersActive = hasActiveFilters(filters);
-  const rows = useMemo(() => buildBrowseRows(events, history), [history]);
+  const selectedCount = activeFilterCount(filters);
+  const liveCount = events.filter((event) => event.status === "In progress").length;
 
-  const matchingTags = useMemo(() => {
-    const query = tagQuery.trim().toLowerCase();
-    const available = allTags.filter((tag) => !tags.includes(tag));
-    if (!query) return available;
-    return available.filter((tag) => tag.toLowerCase().includes(query));
-  }, [allTags, tagQuery, tags]);
-
-  const exactTagMatch = allTags.find(
-    (tag) => tag.toLowerCase() === tagQuery.trim().toLowerCase()
-  );
-
-  const selectedClubs = studentClubs.filter((club) =>
-    clubIds.includes(club.id)
-  );
+  const pills = useMemo(() => {
+    const items: { key: string; label: string; clear: () => EventFilters }[] = [];
+    if (filters.search.trim()) {
+      items.push({
+        key: "q",
+        label: `“${filters.search.trim()}”`,
+        clear: () => ({ ...filters, search: "" }),
+      });
+    }
+    if (filters.hasPlaces) {
+      items.push({
+        key: "places",
+        label: "Places open",
+        clear: () => ({ ...filters, hasPlaces: false }),
+      });
+    }
+    for (const status of filters.statuses) {
+      items.push({
+        key: `status-${status}`,
+        label: status === "In progress" ? "Happening now" : status,
+        clear: () => ({
+          ...filters,
+          statuses: filters.statuses.filter((item) => item !== status),
+        }),
+      });
+    }
+    for (const campus of filters.campuses) {
+      items.push({
+        key: `campus-${campus}`,
+        label: campus,
+        clear: () => ({
+          ...filters,
+          campuses: filters.campuses.filter((item) => item !== campus),
+        }),
+      });
+    }
+    for (const category of filters.categories) {
+      items.push({
+        key: `category-${category}`,
+        label: category,
+        clear: () => ({
+          ...filters,
+          categories: filters.categories.filter((item) => item !== category),
+        }),
+      });
+    }
+    for (const clubId of filters.clubIds) {
+      const club = studentClubs.find((item) => item.id === clubId);
+      items.push({
+        key: `club-${clubId}`,
+        label: club?.shortName ?? clubId,
+        clear: () => ({
+          ...filters,
+          clubIds: filters.clubIds.filter((item) => item !== clubId),
+        }),
+      });
+    }
+    for (const tag of filters.tags) {
+      items.push({
+        key: `tag-${tag}`,
+        label: tag,
+        clear: () => ({
+          ...filters,
+          tags: filters.tags.filter((item) => item !== tag),
+        }),
+      });
+    }
+    return items;
+  }, [filters]);
 
   const clearFilters = () => {
-    setSearch("");
-    setCampuses([]);
-    setCategories([]);
-    setClubIds([]);
-    setStatuses([]);
-    setSort("trending");
-    setTags([]);
-    setTagQuery("");
+    setSearchInput("");
+    commitFilters({ ...defaultFilters, sort: filters.sort });
   };
 
-  const addTag = (tag: string) => {
-    setTags((current) =>
-      current.includes(tag) ? current : [...current, tag]
-    );
-    setTagQuery("");
-  };
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDrawerOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [drawerOpen]);
 
-  const handleTagSearch = (event: FormEvent) => {
-    event.preventDefault();
-    const query = tagQuery.trim().toLowerCase();
-    if (!query) return;
-
-    const match =
-      exactTagMatch ??
-      allTags.find((tag) => tag.toLowerCase().includes(query));
-
-    if (match) addTag(match);
+  const filterProps = {
+    filters,
+    counts: facetCounts,
+    resultCount: filteredEvents.length,
+    onChange: commitFilters,
+    onClear: clearFilters,
   };
 
   return (
-    <div className="bg-white text-[#171717]">
-      {!filtersActive && featured ? <HeroBillboard event={featured} /> : null}
-
-      <section className="bg-[#171717] text-white">
-        <div className="mx-auto max-w-7xl px-6 py-10 lg:px-12">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="bg-[#fafafa] text-[#171717]">
+      <div className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-6 py-4 lg:px-10">
+          <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-purple-300">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-purple-700">
                 Discover
               </p>
-              <h2 className="mt-2 text-2xl font-semibold md:text-3xl">
-                Search clubs, tags and opportunities
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-gray-300">
-                Select as many clubs, campuses, categories and tags as you like.
-                Search for a tag if you do not want to scan the full list.
-              </p>
+              <h1 className="mt-1 text-2xl font-semibold">Browse events</h1>
             </div>
-            {history.length > 0 ? (
+            <p className="text-sm text-gray-500" aria-live="polite">
+              {filteredEvents.length}{" "}
+              {filteredEvents.length === 1 ? "event" : "events"}
+              {selectedCount ? ` · ${selectedCount} filters` : ""}
+            </p>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 lg:flex-row">
+            <label className="sr-only" htmlFor="event-search">
+              Search events, tags and clubs
+            </label>
+            <input
+              id="event-search"
+              type="search"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search events, clubs, tags or campus"
+              className="min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-4 py-3 outline-none focus:border-purple-700 focus:ring-2 focus:ring-purple-100"
+            />
+            <div className="flex gap-3">
+              <label className="sr-only" htmlFor="event-sort">
+                Sort events
+              </label>
+              <select
+                id="event-sort"
+                value={filters.sort}
+                onChange={(event) =>
+                  commitFilters({
+                    ...filters,
+                    sort: event.target.value as EventSort,
+                  })
+                }
+                className="rounded-md border border-gray-200 bg-white px-3 py-3 text-sm outline-none focus:border-purple-700"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
-                onClick={clearViewHistory}
-                className="text-sm font-semibold text-gray-300 underline hover:text-white"
+                onClick={() => setDrawerOpen(true)}
+                className="rounded-md border border-gray-200 px-4 py-3 text-sm font-semibold hover:border-purple-700 lg:hidden"
               >
-                Reset recommendations
+                Filters{selectedCount ? ` (${selectedCount})` : ""}
               </button>
-            ) : null}
+            </div>
           </div>
 
-          <label className="sr-only" htmlFor="event-search">
-            Search events, tags and clubs
-          </label>
-          <input
-            id="event-search"
-            type="search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search by event, tag, campus or student club..."
-            className="mt-6 w-full bg-white px-5 py-4 text-lg text-black outline-none focus:ring-2 focus:ring-purple-400"
-          />
-
-          <div className="mt-8 space-y-7">
-            <FilterChips
-              legend="Student clubs"
-              options={studentClubs.map((club) => ({
-                value: club.id,
-                label: club.shortName,
-              }))}
-              selected={clubIds}
-              onToggle={(value) => setClubIds((current) => toggleListValue(current, value))}
-            />
-
-            <FilterChips
-              legend="Campus"
-              options={campusOptions.map((campus) => ({
-                value: campus,
-                label: campus,
-              }))}
-              selected={campuses}
-              onToggle={(value) =>
-                setCampuses((current) => toggleListValue(current, value))
-              }
-            />
-
-            <FilterChips
-              legend="Category"
-              options={categoryOptions.map((category) => ({
-                value: category,
-                label: category,
-              }))}
-              selected={categories}
-              onToggle={(value) =>
-                setCategories((current) => toggleListValue(current, value))
-              }
-            />
-
-            <FilterChips
-              legend="Status"
-              options={statusOptions.map((status) => ({
-                value: status,
-                label: status,
-              }))}
-              selected={statuses}
-              onToggle={(value) =>
-                setStatuses((current) => toggleListValue(current, value))
-              }
-            />
-
-            <FilterChips
-              legend="Sort"
-              options={sortOptions}
-              selected={[sort]}
-              multiple={false}
-              onToggle={(value) => setSort(value as EventSort)}
-            />
-
-            <fieldset>
-              <legend className="text-sm font-semibold text-gray-300">
-                Tags
-              </legend>
-              <form
-                onSubmit={handleTagSearch}
-                className="mt-3 flex max-w-xl overflow-hidden bg-white"
-              >
-                <label htmlFor="tag-search" className="sr-only">
-                  Search for a tag
-                </label>
-                <input
-                  id="tag-search"
-                  type="search"
-                  value={tagQuery}
-                  onChange={(event) => setTagQuery(event.target.value)}
-                  placeholder="Search for a tag, then press enter"
-                  className="min-w-0 flex-1 px-4 py-3 text-black outline-none"
-                />
+          {pills.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {pills.map((pill) => (
                 <button
-                  type="submit"
-                  className="bg-purple-700 px-4 py-3 text-sm font-semibold text-white hover:bg-purple-600"
+                  key={pill.key}
+                  type="button"
+                  onClick={() => {
+                    const next = pill.clear();
+                    if (pill.key === "q") setSearchInput("");
+                    commitFilters(next);
+                  }}
+                  className="rounded-full bg-purple-50 px-3 py-1 text-sm text-purple-900 transition hover:bg-purple-100"
                 >
-                  Add tag
+                  {pill.label} ×
                 </button>
-              </form>
-
-              {tags.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() =>
-                        setTags((current) =>
-                          current.filter((item) => item !== tag)
-                        )
-                      }
-                      className="bg-purple-700 px-3 py-1.5 text-sm font-medium text-white"
-                    >
-                      {tag} ×
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {matchingTags.length === 0 ? (
-                  <p className="text-sm text-gray-400">
-                    {tagQuery.trim()
-                      ? `No tags match “${tagQuery.trim()}”.`
-                      : "All matching tags are already selected."}
-                  </p>
-                ) : (
-                  matchingTags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => addTag(tag)}
-                      className="bg-white/10 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-white/20"
-                    >
-                      {tag}
-                    </button>
-                  ))
-                )}
-              </div>
-            </fieldset>
-          </div>
-
-          {filtersActive ? (
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              {search.trim() ? (
-                <span className="bg-white/10 px-3 py-1 text-sm">
-                  Search: {search.trim()}
-                </span>
-              ) : null}
-              {selectedClubs.map((club) => (
-                <span key={club.id} className="bg-white/10 px-3 py-1 text-sm">
-                  {club.shortName}
-                </span>
-              ))}
-              {[...campuses, ...categories, ...statuses, ...tags].map((item) => (
-                <span key={item} className="bg-white/10 px-3 py-1 text-sm">
-                  {item}
-                </span>
               ))}
               <button
                 type="button"
                 onClick={clearFilters}
-                className="ml-2 text-sm font-semibold underline"
+                className="text-sm font-semibold text-purple-700 hover:underline"
               >
                 Clear all
               </button>
             </div>
           ) : null}
         </div>
-      </section>
-
-      <div className="space-y-12 bg-white py-12">
-        {filtersActive ? (
-          <section className="px-6 lg:px-12">
-            <div className="mb-6">
-              <h2 className="text-2xl font-semibold">Matching opportunities</h2>
-              <p className="mt-1 text-sm text-gray-500">
-                {filteredEvents.length}{" "}
-                {filteredEvents.length === 1 ? "result" : "results"}
-              </p>
-            </div>
-
-            {filteredEvents.length === 0 ? (
-              <div className="border border-gray-200 bg-gray-50 px-8 py-14 text-center">
-                <h3 className="text-2xl font-semibold">No opportunities found</h3>
-                <p className="mt-3 text-gray-600">
-                  Try another club, tag, campus or search term.
-                </p>
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="mt-6 bg-black px-6 py-3 font-semibold text-white transition hover:bg-purple-700"
-                >
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-4">
-                {filteredEvents.map((event) => (
-                  <EventPoster key={event.id} event={event} />
-                ))}
-              </div>
-            )}
-          </section>
-        ) : (
-          rows.map((row) => (
-            <EventRow
-              key={row.id}
-              title={row.title}
-              subtitle={row.subtitle}
-              events={row.events}
-            />
-          ))
-        )}
       </div>
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-8 lg:grid-cols-[300px_1fr] lg:items-start lg:px-10">
+        <aside className="hidden h-[calc(100vh-11rem)] lg:sticky lg:top-[9.5rem] lg:block">
+          <div className="h-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <FilterPanel {...filterProps} />
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-6">
+          {!filtersActive && liveCount > 0 ? (
+            <button
+              type="button"
+              onClick={() =>
+                commitFilters({
+                  ...filters,
+                  statuses: ["In progress"],
+                })
+              }
+              className="flex w-full items-center justify-between gap-4 rounded-xl bg-purple-700 px-5 py-4 text-left text-white transition hover:bg-purple-800"
+            >
+              <span>
+                <span className="block text-sm font-bold uppercase tracking-[0.16em] text-purple-200">
+                  Happening now
+                </span>
+                <span className="mt-1 block font-semibold">
+                  {liveCount} live {liveCount === 1 ? "event" : "events"} on campus
+                </span>
+              </span>
+              <span className="text-sm font-semibold">View live →</span>
+            </button>
+          ) : null}
+
+          {filteredEvents.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white px-8 py-14 text-center">
+              <h2 className="text-xl font-semibold">No events match these filters</h2>
+              <p className="mt-3 text-gray-600">
+                Clear a filter or search a different campus, club or tag.
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-6 bg-black px-6 py-3 font-semibold text-white transition hover:bg-purple-700"
+              >
+                Reset filters
+              </button>
+            </div>
+          ) : (
+            <EventGrid
+              events={filteredEvents}
+              title={filtersActive ? "Matching events" : "All events"}
+              subtitle="Open a card for roles, the map and the application form."
+              animate
+            />
+          )}
+        </div>
+      </div>
+
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close filters"
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setDrawerOpen(false)}
+          />
+          <div className="filter-drawer absolute inset-y-0 left-0 flex w-[min(100%,22rem)] flex-col bg-white shadow-2xl">
+            <FilterPanel
+              {...filterProps}
+              mobile
+              onClose={() => setDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -68,7 +68,7 @@ export default function SignupPage() {
     };
 
     // Check all fields before signup.
-    const handleSubmit = (
+    const handleSubmit = async (
         event: FormEvent<HTMLFormElement>
     ) => {
         event.preventDefault();
@@ -202,8 +202,6 @@ export default function SignupPage() {
             return;
         }
 
-        // Save only basic demo information.
-        // Never store the password here.
         localStorage.setItem(
             "demoRegisteredEmail",
             email.trim().toLowerCase()
@@ -214,9 +212,35 @@ export default function SignupPage() {
             name.trim()
         );
 
+        try {
+            const response = await fetch("/api/auth/signup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name.trim(),
+                    email: email.trim().toLowerCase(),
+                    password,
+                }),
+            });
+            const payload = (await response.json()) as {
+                source?: string;
+                error?: string;
+            };
+            if (!response.ok && payload.source !== "local") {
+                openPopup(
+                    "Could not create account",
+                    payload.error ||
+                        "That email may already be registered."
+                );
+                return;
+            }
+        } catch {
+            // Local demo account is still stored above.
+        }
+
         openPopup(
             "Account created",
-            "Your demo Student / Volunteer account has been created successfully. You can now sign in."
+            "Your Student / Volunteer account has been created. You can now sign in."
         );
 
         setTimeout(() => {
@@ -251,13 +275,13 @@ export default function SignupPage() {
             </header>
 
             {/* Signup area */}
-            <section className="mx-auto flex max-w-7xl justify-center px-6 py-16">
+            <section className="mx-auto flex max-w-7xl justify-center px-6 py-10">
                 <div className="w-full max-w-xl bg-white p-8 shadow-sm md:p-10">
                     <p className="text-sm font-bold uppercase tracking-[0.16em] text-purple-700">
                         Student / Volunteer Portal
                     </p>
 
-                    <h1 className="mt-3 text-4xl font-semibold">
+                    <h1 className="mt-3 text-3xl font-semibold">
                         Create your account
                     </h1>
 

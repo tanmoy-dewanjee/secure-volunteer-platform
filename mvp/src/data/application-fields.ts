@@ -218,9 +218,10 @@ const eventFields: Record<string, ApplicationField[]> = {
 export function getApplicationFields(event: Event): ApplicationField[] {
   const fromClub = clubFields[event.organisationId] ?? [];
   const fromEvent = eventFields[event.id] ?? [];
+  const fromCustom = event.customFields ?? [];
   const seen = new Set<string>();
 
-  return [...fromClub, ...fromEvent].filter((field) => {
+  return [...fromClub, ...fromEvent, ...fromCustom].filter((field) => {
     if (seen.has(field.id)) return false;
     seen.add(field.id);
     return true;

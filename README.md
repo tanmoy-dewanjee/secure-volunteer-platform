@@ -23,16 +23,19 @@ The design pack (wireframes, schema, OpenAPI, ASVS, tests) is ready for the 15 S
 
 Next.js, TypeScript, Tailwind CSS, Supabase (PostgreSQL + Auth), Vercel Hobby ($0).
 
-## MVP frontend
+## Apps
 
-The student-portal Next.js prototype lives in `mvp/`. From that folder:
+Student portal (`mvp/`, port 3000) and admin portal (`admin/`, port 3010) are separate Next.js apps. They share one Supabase project when keys are set; otherwise each app uses local demo data.
 
 ```bash
-npm install
-npm run dev
+cd mvp && npm install && npm run dev
+cd admin && npm install && npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+- Student: [http://localhost:3000](http://localhost:3000)
+- Admin: [http://localhost:3010/login](http://localhost:3010/login) — `rotaract.admin` / `Coordinator1!`
+
+Backend setup: `supabase/README.md`. Run `0001_init.sql` then `0002_seed_demo.sql` so events and demo accounts are already in the database. Copy keys into `mvp/.env.local` and `admin/.env.local`.
 
 ## Preview the Must screens
 

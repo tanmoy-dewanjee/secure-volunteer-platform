@@ -9,10 +9,12 @@ import { recordEventView } from "@/lib/view-history";
 type EventPosterProps = {
   event: Event;
   source?: "card" | "billboard";
+  layout?: "rail" | "grid";
 };
 
 function statusClass(status: Event["status"]) {
   if (status === "Open") return "bg-green-100 text-green-800";
+  if (status === "In progress") return "bg-purple-700 text-white";
   if (status === "Coming soon") return "bg-amber-100 text-amber-800";
   if (status === "Full") return "bg-red-100 text-red-800";
   return "bg-gray-100 text-gray-700";
@@ -21,6 +23,7 @@ function statusClass(status: Event["status"]) {
 export default function EventPoster({
   event,
   source = "card",
+  layout = "rail",
 }: EventPosterProps) {
   const host = getEventHost(event);
 
@@ -28,21 +31,25 @@ export default function EventPoster({
     <Link
       href={`/events/${event.id}`}
       onClick={() => recordEventView(event.id, source)}
-      className="group/poster relative w-[240px] shrink-0 snap-start sm:w-[280px] lg:w-[300px]"
+      className={
+        layout === "grid"
+          ? "group/poster block h-full"
+          : "group/poster relative w-[240px] shrink-0 snap-start sm:w-[280px] lg:w-[300px]"
+      }
     >
-      <article className="poster-motion flex h-full flex-col overflow-hidden border border-gray-200 bg-white transition duration-300 ease-out group-hover/poster:-translate-y-1 group-hover/poster:shadow-lg">
+      <article className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white transition duration-300 ease-out group-hover/poster:-translate-y-1 group-hover/poster:shadow-lg">
         <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
           <Image
             src={event.posterImage}
             alt={event.title}
             fill
-            sizes="300px"
-            className="poster-motion object-cover transition duration-500 group-hover/poster:scale-105"
+            sizes={layout === "grid" ? "(min-width: 1280px) 30vw, 50vw" : "300px"}
+            className="object-cover transition duration-500 group-hover/poster:scale-105"
           />
           <span
             className={`absolute left-3 top-3 px-2 py-1 text-[11px] font-bold uppercase tracking-wide ${statusClass(event.status)}`}
           >
-            {event.status}
+            {event.status === "In progress" ? "Happening now" : event.status}
           </span>
         </div>
 
@@ -58,9 +65,11 @@ export default function EventPoster({
           </p>
           <p className="mt-1 text-sm text-gray-500">{event.date}</p>
           <p className="mt-4 text-sm text-gray-500">
-            {event.placesAvailable > 0
-              ? `${event.placesAvailable} places available`
-              : "Applications opening soon"}
+            {event.status === "In progress"
+              ? "Volunteers are on site now"
+              : event.placesAvailable > 0
+                ? `${event.placesAvailable} places available`
+                : "Applications opening soon"}
           </p>
         </div>
       </article>

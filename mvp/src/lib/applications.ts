@@ -114,3 +114,60 @@ export function withdrawApplication(username: string, id: string) {
   saveApplications(username, next);
   return next;
 }
+
+export async function fetchApplications(username: string) {
+  try {
+    const response = await fetch(
+      `/api/applications?username=${encodeURIComponent(username)}`
+    );
+    if (response.ok) {
+      const payload = (await response.json()) as {
+        source?: string;
+        applications?: VolunteerApplication[];
+      };
+      if (payload.source === "supabase" && Array.isArray(payload.applications)) {
+        saveApplications(username, payload.applications);
+        return payload.applications;
+      }
+    }
+  } catch {
+    // Local cache remains the fallback.
+  }
+  return getApplications(username);
+}
+
+export async function persistApplication(
+  username: string,
+  name: string,
+  application: Omit<VolunteerApplication, "id" | "submittedDate" | "status">
+) {
+  const result = addApplication(username, application);
+  try {
+    await fetch("/api/applications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username,
+        name,
+        application: result.application,
+      }),
+    });
+  } catch {
+    // Already stored locally.
+  }
+  return result;
+}
+
+export async function persistWithdraw(username: string, id: string) {
+  const next = withdrawApplication(username, id);
+  try {
+    await fetch(`/api/applications/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, status: "Withdrawn" }),
+    });
+  } catch {
+    // Already stored locally.
+  }
+  return next;
+}
