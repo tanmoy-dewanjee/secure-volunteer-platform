@@ -8,7 +8,6 @@ import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { useSession } from "@/hooks/useSession";
-import { isMfaEnabled } from "@/lib/mfa";
 import { signIn, takeReturnPath } from "@/lib/session";
 import { signInStudentSession } from "@/utils/supabase/session";
 
@@ -122,17 +121,14 @@ export default function LoginPage() {
                 );
                 return;
             }
-            if (payload.username) {
-                setUsername(payload.username);
+            const account = (payload.username || nextUsername).trim().toLowerCase();
+            if (account) {
+                setUsername(account);
             }
             setAccountName(payload.name || "");
-            setAuthStep(
-                isMfaEnabled(payload.username || nextUsername)
-                    ? "verify"
-                    : "enroll"
-            );
+            setAuthStep("enroll");
         } catch {
-            setAuthStep(isMfaEnabled(nextUsername) ? "verify" : "enroll");
+            setAuthStep("enroll");
         }
     };
 
@@ -253,7 +249,7 @@ export default function LoginPage() {
                     {authStep !== "password" ? (
                         <TwoFactorPanel
                             username={username.trim().toLowerCase()}
-                            mode={authStep}
+                            mode="enroll"
                             onVerified={finishSignIn}
                             onCancel={() => setAuthStep("password")}
                         />

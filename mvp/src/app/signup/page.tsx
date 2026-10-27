@@ -4,7 +4,14 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import DemoBanner from "@/components/DemoBanner";
+import { signIn } from "@/lib/session";
+import { signInStudentSession } from "@/utils/supabase/session";
+
+function usernameFromSignupEmail(email: string) {
+    return email.trim().toLowerCase().split("@")[0] ?? "";
+}
 
 export default function SignupPage() {
     const router = useRouter();
@@ -34,6 +41,8 @@ export default function SignupPage() {
 
     const [showPopup, setShowPopup] =
         useState(false);
+    const [step, setStep] = useState<"form" | "enroll">("form");
+    const [username, setUsername] = useState("");
 
     // Accept common Adelaide University student email formats.
     const isValidStudentEmail = (
@@ -238,14 +247,19 @@ export default function SignupPage() {
             // Local demo account is still stored above.
         }
 
-        openPopup(
-            "Account created",
-            "Your Student / Volunteer account has been created. You can now sign in."
-        );
+        const nextUsername = usernameFromSignupEmail(email);
+        setUsername(nextUsername);
+        setStep("enroll");
+    };
 
-        setTimeout(() => {
-            router.push("/login");
-        }, 1000);
+    const finishSignup = async () => {
+        await signInStudentSession(username, password);
+        signIn({
+            username,
+            name: name.trim(),
+            keepSignedIn: false,
+        });
+        router.push("/profile");
     };
 
     return (
@@ -281,6 +295,15 @@ export default function SignupPage() {
                         Student / Volunteer Portal
                     </p>
 
+                    {step === "enroll" ? (
+                        <TwoFactorPanel
+                            username={username}
+                            mode="enroll"
+                            onVerified={finishSignup}
+                            onCancel={() => setStep("form")}
+                        />
+                    ) : (
+                    <>
                     <h1 className="mt-3 text-3xl font-semibold">
                         Create your account
                     </h1>
@@ -288,7 +311,8 @@ export default function SignupPage() {
                     <p className="mt-4 leading-7 text-gray-600">
                         Register using your Adelaide University student
                         email to discover opportunities, apply for
-                        volunteer roles and manage your activities.
+                        volunteer roles and manage your activities. The
+                        next step is scanning a 2FA QR code.
                     </p>
 
                     <form
@@ -557,13 +581,13 @@ export default function SignupPage() {
                         </p>
 
                         <p className="mt-1 text-sm leading-6 text-gray-700">
-                            Email format checking on this page is
-                            only frontend validation. Real student
-                            account verification, authentication and
-                            session management will be handled
-                            securely using Supabase Auth.
+                            After this form you must enrol an authenticator
+                            app by scanning a QR code. Live one-time codes
+                            are never shown in the portal.
                         </p>
                     </div>
+                    </>
+                    )}
                 </div>
             </section>
 

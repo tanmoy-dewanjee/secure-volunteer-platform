@@ -39,9 +39,13 @@ export function isMfaEnabled(username: string) {
   return Boolean(getMfaRecord(username)?.enabled);
 }
 
+export function needsMfaEnrollment(username: string) {
+  return !isMfaEnabled(username);
+}
+
 export function startMfaEnrollment(username: string): MfaRecord {
   const existing = getMfaRecord(username);
-  if (existing && !existing.enabled) return existing;
+  if (existing) return existing;
 
   const record: MfaRecord = {
     username: username.trim().toLowerCase(),
