@@ -1,0 +1,50 @@
+/* Extracted from the live Student Portal (mvp/), Oct 2026.
+   Official AU wireframe tokens in design/wireframes/css/tokens.css are
+   documented but NOT used — the implemented student UI is the source of truth. */
+
+:root {
+  --svp-ink: #171717;
+  --svp-paper: #ffffff;
+  --svp-canvas: #fafafa;
+  --svp-limestone: #f3f1ed;
+  --svp-accent: #7c00e8;
+  --svp-accent-hover: #6b21a8;
+  --svp-accent-soft: #f4ecff;
+  --svp-accent-text: #581c87;
+  --svp-teal: #18a999;
+  --svp-coral: #ee626b;
+  --svp-demo: #f4d35e;
+  --svp-line: #e5e7eb;
+  --svp-line-strong: #d1d5db;
+  --svp-muted: #4b5563;
+  --svp-muted-2: #6b7280;
+  --svp-success-bg: #dcfce7;
+  --svp-success-fg: #166534;
+  --svp-warning-bg: #fef3c7;
+  --svp-warning-fg: #92400e;
+  --svp-danger-bg: #fee2e2;
+  --svp-danger-fg: #991b1b;
+  --svp-danger-border: #ef4444;
+  --svp-closed-bg: #f3f4f6;
+  --svp-closed-fg: #374151;
+  --svp-focus-ring: #e9d5ff;
+  --svp-overlay: rgb(0 0 0 / 0.5);
+
+  --svp-font: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --svp-max: 80rem;
+  --svp-pad-x: 1.5rem;
+  --svp-pad-x-lg: 2.5rem;
+  --svp-radius-sm: 4px;
+  --svp-radius-md: 6px;
+  --svp-radius-xl: 12px;
+  --svp-radius-pill: 9999px;
+  --svp-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --svp-shadow-lg: 0 10px 15px rgb(23 23 23 / 0.08);
+  --svp-shadow-modal: 0 25px 50px rgb(0 0 0 / 0.25);
+  --svp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --svp-duration: 0.45s;
+
+  /* Admin-only distinction: same language, ink chrome + Admin badge */
+  --svp-admin-chrome: #171717;
+  --svp-admin-rail: 17.5rem;
+}

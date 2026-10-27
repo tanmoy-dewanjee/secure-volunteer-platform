@@ -1,0 +1,84 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
+import {
+  DEMO_ADMIN_PASSWORD,
+  findAdminAccount,
+  isStudentUsername,
+} from "@/lib/auth/accounts";
+import {
+  clearLoginFailures,
+  loginBlocked,
+  recordLoginFailure,
+} from "@/lib/auth/lockout";
+import { beginAdminEnrollment, getAdminMfa } from "@/lib/auth/mfa-store";
+import { MFA_COOKIE, signAdminToken } from "@/lib/auth/session";
+
+const bodySchema = z.object({
+  username: z.string().trim().min(1).max(80),
+  password: z.string().min(1).max(200),
+});
+
+const GENERIC = "Sign-in details were not recognised.";
+
+export async function POST(request: Request) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
+
+  let parsed: z.infer<typeof bodySchema>;
+  try {
+    parsed = bodySchema.parse(await request.json());
+  } catch {
+    return NextResponse.json({ error: GENERIC }, { status: 400 });
+  }
+
+  const key = `${ip}:${parsed.username.toLowerCase()}`;
+  if (loginBlocked(key)) {
+    return NextResponse.json(
+      { error: "Too many attempts. Try again in 15 minutes." },
+      { status: 429 }
+    );
+  }
+
+  if (isStudentUsername(parsed.username)) {
+    recordLoginFailure(key);
+    return NextResponse.json({ error: GENERIC }, { status: 401 });
+  }
+
+  const account = findAdminAccount(parsed.username);
+  if (!account || parsed.password !== DEMO_ADMIN_PASSWORD) {
+    recordLoginFailure(key);
+    return NextResponse.json({ error: GENERIC }, { status: 401 });
+  }
+
+  clearLoginFailures(key);
+  const pending = await signAdminToken(
+    {
+      sub: account.id,
+      username: account.username,
+      role: account.role,
+      displayName: account.displayName,
+    },
+    10
+  );
+  const jar = await cookies();
+  jar.set(MFA_COOKIE, pending, {
+    httpOnly: true,
+    secure: process.env.COOKIE_SECURE === "true",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 10 * 60,
+  });
+
+  const existing = getAdminMfa(account.username);
+  if (existing?.enabled) {
+    return NextResponse.json({ mfaRequired: true, enrolled: true });
+  }
+
+  const enrollment = beginAdminEnrollment(account.username, account.email);
+  return NextResponse.json({
+    mfaRequired: true,
+    enrolled: false,
+    enrollment,
+  });
+}
