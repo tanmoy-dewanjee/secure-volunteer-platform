@@ -108,6 +108,7 @@ export function signOut() {
   window.sessionStorage.removeItem("demoUsername");
   window.localStorage.removeItem("demoLoggedIn");
   window.localStorage.removeItem("demoUsername");
+  void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
   window.dispatchEvent(new Event(SESSION_EVENT));
 }
 

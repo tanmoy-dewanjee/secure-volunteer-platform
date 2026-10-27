@@ -14,12 +14,16 @@ import {
   verifyAdminMfa,
 } from "@/lib/auth/mfa-store";
 import { MFA_COOKIE, readAdminToken, setSessionCookie } from "@/lib/auth/session";
+import { isTrustedOrigin } from "@/lib/security/origin";
 
 const bodySchema = z.object({
   code: z.string().min(1).max(16),
 });
 
 export async function POST(request: Request) {
+  if (!isTrustedOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const jar = await cookies();
   const pending = jar.get(MFA_COOKIE)?.value;
   if (!pending) {

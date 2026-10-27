@@ -7,6 +7,7 @@ import {
   findAdminAccount,
   isStudentUsername,
 } from "@/lib/auth/accounts";
+import { isTrustedOrigin } from "@/lib/security/origin";
 import {
   clearLoginFailures,
   loginBlocked,
@@ -23,6 +24,9 @@ const bodySchema = z.object({
 const GENERIC = "Sign-in details were not recognised.";
 
 export async function POST(request: Request) {
+  if (!isTrustedOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
 
   let parsed: z.infer<typeof bodySchema>;
@@ -64,7 +68,9 @@ export async function POST(request: Request) {
   const jar = await cookies();
   jar.set(MFA_COOKIE, pending, {
     httpOnly: true,
-    secure: process.env.COOKIE_SECURE === "true",
+    secure:
+      process.env.COOKIE_SECURE === "true" ||
+      process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
     maxAge: 10 * 60,

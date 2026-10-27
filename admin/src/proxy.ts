@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { readAdminToken } from "@/lib/auth/session";
 import { ADMIN_COOKIE, PUBLIC_PATHS } from "@/lib/security/constants";
 import { updateSession } from "@/utils/supabase/middleware";
 
@@ -35,7 +36,8 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse;
   }
 
-  const session = request.cookies.get(ADMIN_COOKIE)?.value;
+  const raw = request.cookies.get(ADMIN_COOKIE)?.value;
+  const session = raw ? await readAdminToken(raw) : null;
   if (!session) {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "Unauthorised" }, { status: 401 });

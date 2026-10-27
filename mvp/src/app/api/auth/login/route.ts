@@ -1,5 +1,18 @@
-import { NextResponse } from "next/server";
-
+import {
+  GENERIC_AUTH_ERROR,
+} from "@/lib/security/constants";
+import {
+  jsonError,
+  jsonOk,
+  requireTrustedOrigin,
+} from "@/lib/security/http";
+import {
+  clearLoginFailures,
+  clientKey,
+  loginBlocked,
+  recordLoginFailure,
+} from "@/lib/security/lockout";
+import { setPendingMfaCookie } from "@/lib/security/pending";
 import {
   getSupabaseAdmin,
   getSupabaseAnon,
@@ -9,42 +22,45 @@ import {
 } from "@/lib/supabase/config";
 
 export async function POST(request: Request) {
+  const originError = requireTrustedOrigin(request);
+  if (originError) return originError;
+
   let body: { username?: string; password?: string };
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    return jsonError(GENERIC_AUTH_ERROR, 400);
   }
 
   const username = body.username?.trim().toLowerCase() ?? "";
   const password = body.password ?? "";
-  if (!username || password.length < 8) {
-    return NextResponse.json({ error: "Check your sign-in details." }, { status: 400 });
+  if (!username || username.length > 80 || password.length < 1 || password.length > 200) {
+    return jsonError(GENERIC_AUTH_ERROR, 400);
+  }
+
+  const key = clientKey(request, username);
+  if (loginBlocked(key)) {
+    return jsonError("Too many attempts. Try again in 15 minutes.", 429);
   }
 
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({
-      source: "local",
-      username: username.includes("@") ? usernameFromEmail(username) : username,
-      name: usernameFromEmail(username),
-    });
+    recordLoginFailure(key);
+    return jsonError("Sign-in is not available.", 503);
   }
 
   const supabase = getSupabaseAnon() ?? getSupabaseAdmin();
   if (!supabase) {
-    return NextResponse.json({ error: "Auth is not available." }, { status: 500 });
+    recordLoginFailure(key);
+    return jsonError("Sign-in is not available.", 503);
   }
 
   const emails = studentEmailsForUsername(username);
-  let lastError = "Sign-in details were not recognised.";
-
   for (const email of emails) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error || !data.user) {
-      lastError = error?.message || lastError;
       continue;
     }
 
@@ -55,27 +71,26 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (profile?.portal === "admin") {
-      return NextResponse.json(
-        { error: "This account belongs to the coordinator portal." },
-        { status: 403 }
-      );
+      recordLoginFailure(key);
+      return jsonError(GENERIC_AUTH_ERROR, 401);
     }
 
-    const mfa = (profile?.profile_data as { mfa?: { enabled?: boolean; secret?: string } } | null)
-      ?.mfa;
-    return NextResponse.json({
+    clearLoginFailures(key);
+    const account = profile?.username || usernameFromEmail(email);
+    await setPendingMfaCookie(account);
+    const mfa = (
+      profile?.profile_data as
+        | { mfa?: { enabled?: boolean; secret?: string } }
+        | null
+    )?.mfa;
+    return jsonOk({
       source: "supabase",
-      username: profile?.username || usernameFromEmail(email),
+      username: account,
       name: profile?.display_name || usernameFromEmail(email),
       mfaEnabled: Boolean(mfa?.enabled && mfa?.secret),
-      accessToken: data.session?.access_token,
     });
   }
 
-  return NextResponse.json({
-    source: "local",
-    warning: lastError,
-    username: username.includes("@") ? usernameFromEmail(username) : username,
-    name: usernameFromEmail(username),
-  });
+  recordLoginFailure(key);
+  return jsonError(GENERIC_AUTH_ERROR, 401);
 }

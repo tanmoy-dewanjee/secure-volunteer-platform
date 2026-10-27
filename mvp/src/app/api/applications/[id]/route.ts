@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, requireTrustedOrigin } from "@/lib/security/http";
+import { requireStudentUsername } from "@/lib/security/student-session";
 import { updateSharedApplicationStatus } from "@/lib/store/server-applications";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -10,19 +12,21 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
+  const originError = requireTrustedOrigin(request);
+  if (originError) return originError;
+
   let body: { username?: string; status?: string };
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    return jsonError("Invalid payload.", 400);
   }
 
-  const username = body.username?.trim().toLowerCase();
-  if (!username || body.status !== "Withdrawn") {
-    return NextResponse.json(
-      { error: "Only pending withdraw is supported." },
-      { status: 400 }
-    );
+  const gate = await requireStudentUsername(body.username);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
+  if (body.status !== "Withdrawn") {
+    return jsonError("Only pending withdraw is supported.", 400);
   }
 
   updateSharedApplicationStatus(id, "Withdrawn", username);
@@ -51,7 +55,7 @@ export async function PATCH(
     .eq("status", "Pending");
 
   if (error) {
-    return NextResponse.json({ source: "local", ok: true, warning: error.message });
+    return NextResponse.json({ source: "local", ok: true });
   }
 
   return NextResponse.json({ source: "supabase", ok: true });

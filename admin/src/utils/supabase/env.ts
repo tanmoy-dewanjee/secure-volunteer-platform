@@ -12,8 +12,11 @@ export function supabaseCookieOptions() {
   return {
     name: SUPABASE_COOKIE,
     path: "/",
+    httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure:
+      process.env.COOKIE_SECURE === "true" ||
+      process.env.NODE_ENV === "production",
   };
 }
 

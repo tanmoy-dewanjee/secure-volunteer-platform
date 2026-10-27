@@ -179,7 +179,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const gate = await requireAdmin("applications.write");
+  const gate = await requireAdmin("applications.write", request);
   if (gate.error) return gate.error;
 
   let ops: OpsState;

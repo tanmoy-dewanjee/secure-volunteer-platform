@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { demoStudentProfile } from "@/data/volunteer-progress";
+import { jsonError, plainText, requireTrustedOrigin } from "@/lib/security/http";
+import { requireStudentUsername } from "@/lib/security/student-session";
 import {
   getRuntimeProfile,
   upsertRuntimeProfile,
@@ -9,10 +11,10 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
 import { profileFromRow } from "@/lib/supabase/map";
 
 export async function GET(request: Request) {
-  const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
-  if (!username) {
-    return NextResponse.json({ error: "username is required" }, { status: 400 });
-  }
+  const requested = new URL(request.url).searchParams.get("username");
+  const gate = await requireStudentUsername(requested);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
 
   const stored = getRuntimeProfile(username);
   const localProfile = {
@@ -61,6 +63,9 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const originError = requireTrustedOrigin(request);
+  if (originError) return originError;
+
   let body: {
     username?: string;
     profile?: {
@@ -76,15 +81,30 @@ export async function PUT(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    return jsonError("Invalid payload.", 400);
   }
 
-  const username = body.username?.trim().toLowerCase();
-  if (!username || !body.profile) {
-    return NextResponse.json({ error: "username and profile are required." }, { status: 400 });
+  const gate = await requireStudentUsername(body.username);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
+  if (!body.profile) {
+    return jsonError("username and profile are required.", 400);
   }
 
-  upsertRuntimeProfile(username, body.profile);
+  const profile = {
+    ...body.profile,
+    fullName: plainText(body.profile.fullName, 120),
+    campus: plainText(body.profile.campus, 80),
+    bio: plainText(body.profile.bio, 2000),
+    availability: plainText(body.profile.availability, 400),
+    emergencyContact: plainText(body.profile.emergencyContact, 200),
+    accessibility: plainText(body.profile.accessibility, 400),
+    skills: Array.isArray(body.profile.skills)
+      ? body.profile.skills.map((skill) => plainText(skill, 40)).filter(Boolean).slice(0, 20)
+      : [],
+  };
+
+  upsertRuntimeProfile(username, profile);
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json({ source: "local", ok: true });
@@ -96,13 +116,13 @@ export async function PUT(request: Request) {
   const { error } = await supabase
     .from("profiles")
     .update({
-      display_name: body.profile.fullName,
-      campus: body.profile.campus,
-      bio: body.profile.bio,
-      skills: body.profile.skills,
-      availability: body.profile.availability,
-      emergency_contact: body.profile.emergencyContact,
-      accessibility: body.profile.accessibility,
+      display_name: profile.fullName,
+      campus: profile.campus,
+      bio: profile.bio,
+      skills: profile.skills,
+      availability: profile.availability,
+      emergency_contact: profile.emergencyContact,
+      accessibility: profile.accessibility,
     })
     .eq("username", username);
 
@@ -110,7 +130,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({
       source: "local",
       ok: true,
-      warning: error.message,
     });
   }
 

@@ -7,7 +7,7 @@ date: 2026-09-10
 
 # ASVS 5.0 Level 1 scope
 
-**Standard:** OWASP ASVS 5.0, Level 1 on **surfaces we ship**. We are not claiming Level 2/3 or a paid pentest.
+**Standard:** OWASP ASVS 5.0.0, Level 1 on **surfaces we ship**. We are not claiming Level 2/3 or a paid pentest. Evidence: `security/asvs.md`.
 
 ## In scope (Must surfaces)
 

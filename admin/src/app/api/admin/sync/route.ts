@@ -26,10 +26,10 @@ export async function GET() {
   });
 }
 
-export async function POST() {
-  const gate = await requireAdmin("settings.manage");
+export async function POST(request: Request) {
+  const gate = await requireAdmin("settings.manage", request);
   if (gate.error) {
-    const coordinator = await requireAdmin("events.write");
+    const coordinator = await requireAdmin("events.write", request);
     if (coordinator.error) return coordinator.error;
   }
 

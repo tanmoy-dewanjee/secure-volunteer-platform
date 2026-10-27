@@ -204,7 +204,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const gate = await requireAdmin("events.write");
+  const gate = await requireAdmin("events.write", request);
   if (gate.error) return gate.error;
 
   let body: {

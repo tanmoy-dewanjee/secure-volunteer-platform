@@ -39,7 +39,7 @@ export async function DELETE(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const gate = await requireAdmin("events.write");
+  const gate = await requireAdmin("events.write", request);
   if (gate.error) return gate.error;
   const { id } = await context.params;
 

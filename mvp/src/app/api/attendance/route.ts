@@ -8,6 +8,8 @@ import {
   type AttendanceAssignment,
   type ShiftStatus,
 } from "@/lib/attendance";
+import { jsonError, requireTrustedOrigin } from "@/lib/security/http";
+import { requireStudentUsername } from "@/lib/security/student-session";
 import { seedShifts } from "@/data/shifts";
 import {
   listRuntimeAssignments,
@@ -120,10 +122,10 @@ async function logAttendance(
 }
 
 export async function GET(request: Request) {
-  const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
-  if (!username) {
-    return NextResponse.json({ error: "username is required" }, { status: 400 });
-  }
+  const requested = new URL(request.url).searchParams.get("username");
+  const gate = await requireStudentUsername(requested);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
 
   const stored = listRuntimeAssignments({ username });
   if (!isSupabaseConfigured()) {
@@ -149,7 +151,6 @@ export async function GET(request: Request) {
   if (error) {
     return NextResponse.json({
       source: stored.length ? "live" : "local",
-      warning: error.message,
       shifts: stored,
     });
   }
@@ -163,16 +164,21 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const originError = requireTrustedOrigin(request);
+  if (originError) return originError;
+
   let body: { username?: string; payload?: string };
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    return jsonError("Invalid payload.", 400);
   }
 
-  const username = body.username?.trim().toLowerCase() ?? "";
+  const gate = await requireStudentUsername(body.username);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
   const parsed = parseQrPayload(body.payload || "");
-  if (!username || !parsed) {
+  if (!parsed) {
     return NextResponse.json(
       { error: "Scan the event station QR, or ask a coordinator to scan yours." },
       { status: 400 }

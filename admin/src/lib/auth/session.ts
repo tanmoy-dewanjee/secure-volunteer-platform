@@ -18,13 +18,20 @@ export type AdminToken = {
 };
 
 function secretKey() {
-  const secret =
-    process.env.ADMIN_SESSION_SECRET || "dev-admin-session-secret-change-me";
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ADMIN_SESSION_SECRET is required");
+    }
+    return new TextEncoder().encode("dev-admin-session-secret-change-me");
+  }
   return new TextEncoder().encode(secret);
 }
 
 function cookieSecure() {
-  return process.env.COOKIE_SECURE === "true";
+  return (
+    process.env.COOKIE_SECURE === "true" || process.env.NODE_ENV === "production"
+  );
 }
 
 export async function signAdminToken(payload: AdminToken, minutes = 15) {

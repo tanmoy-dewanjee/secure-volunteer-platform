@@ -116,7 +116,7 @@ export default function LoginPage() {
                 mfaEnabled?: boolean;
                 error?: string;
             };
-            if (!response.ok && payload.source !== "local") {
+            if (!response.ok) {
                 openPopup(
                     "Sign in unsuccessful",
                     payload.error || "Those details were not recognised."
@@ -131,9 +131,7 @@ export default function LoginPage() {
             let remoteEnabled = Boolean(payload.mfaEnabled);
             if (!remoteEnabled) {
                 try {
-                    const mfaRes = await fetch(
-                        `/api/auth/mfa?username=${encodeURIComponent(account)}`
-                    );
+                    const mfaRes = await fetch("/api/auth/mfa");
                     const mfaPayload = (await mfaRes.json()) as { enabled?: boolean };
                     remoteEnabled = Boolean(mfaPayload.enabled);
                 } catch {
@@ -144,14 +142,26 @@ export default function LoginPage() {
                 remoteEnabled || isMfaEnabled(account) ? "verify" : "enroll"
             );
         } catch {
-            setAuthStep(
-                isMfaEnabled(nextUsername) ? "verify" : "enroll"
+            openPopup(
+                "Sign in unsuccessful",
+                "Those details were not recognised."
             );
         }
     };
 
     const finishSignIn = async () => {
-        await signInStudentSession(username.trim().toLowerCase(), password);
+        const established = await signInStudentSession(
+            username.trim().toLowerCase(),
+            password
+        );
+        if (!established) {
+            openPopup(
+                "Sign in unsuccessful",
+                "Could not establish a secure session. Try again."
+            );
+            setAuthStep("password");
+            return;
+        }
         signIn({
             username: username.trim().toLowerCase(),
             name: accountName || undefined,

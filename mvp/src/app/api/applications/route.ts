@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { events as seedEvents } from "@/data/events";
 import { findApplicationConflict } from "@/lib/application-conflicts";
 import type { VolunteerApplication } from "@/lib/applications";
+import { jsonError, requireTrustedOrigin } from "@/lib/security/http";
+import { requireStudentUsername } from "@/lib/security/student-session";
 import {
   listSharedApplications,
   upsertSharedApplication,
@@ -162,7 +164,6 @@ async function loadRemoteApplications(username: string) {
     return {
       source: "local" as const,
       applications: [] as VolunteerApplication[],
-      warning: error.message,
     };
   }
 
@@ -231,7 +232,6 @@ async function saveRemoteApplication(
       source: "local" as const,
       created: true,
       application,
-      warning: error.message,
     };
   }
 
@@ -239,10 +239,10 @@ async function saveRemoteApplication(
 }
 
 export async function GET(request: Request) {
-  const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
-  if (!username) {
-    return NextResponse.json({ error: "username is required" }, { status: 400 });
-  }
+  const requested = new URL(request.url).searchParams.get("username");
+  const gate = await requireStudentUsername(requested);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
 
   const remote = await loadRemoteApplications(username);
   const stored = listSharedApplications(username).map(toStudentApp);
@@ -256,6 +256,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const originError = requireTrustedOrigin(request);
+  if (originError) return originError;
+
   let body: {
     username?: string;
     name?: string;
@@ -265,16 +268,15 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    return jsonError("Invalid payload.", 400);
   }
 
-  const username = body.username?.trim().toLowerCase();
+  const gate = await requireStudentUsername(body.username);
+  if (gate.error) return gate.error;
+  const username = gate.username!;
   const application = body.application;
-  if (!username || !application) {
-    return NextResponse.json(
-      { error: "username and application are required." },
-      { status: 400 }
-    );
+  if (!application) {
+    return jsonError("username and application are required.", 400);
   }
 
   const catalog = [...seedEvents, ...listRuntimeEvents()];

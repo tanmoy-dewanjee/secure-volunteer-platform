@@ -1,5 +1,13 @@
-import { NextResponse } from "next/server";
-
+import {
+  jsonError,
+  jsonOk,
+  requireTrustedOrigin,
+} from "@/lib/security/http";
+import {
+  clientKey,
+  loginBlocked,
+  recordLoginFailure,
+} from "@/lib/security/lockout";
 import {
   getSupabaseAdmin,
   getSupabaseAnon,
@@ -23,31 +31,35 @@ function allowedOrigin(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const originError = requireTrustedOrigin(request);
+  if (originError) return originError;
+
+  const key = clientKey(request, "forgot");
+  if (loginBlocked(key)) {
+    return jsonError("Too many attempts. Try again in 15 minutes.", 429);
+  }
+
   let body: { username?: string };
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
+    return jsonError("Enter your university username.", 400);
   }
 
   const username = body.username?.trim().toLowerCase() ?? "";
-  if (!username) {
-    return NextResponse.json({ error: "Enter your university username." }, { status: 400 });
-  }
-
   const looksLikeId = /^a\d{7}$/i.test(username);
   const looksLikeEmail = username.includes("@");
-  if (!looksLikeId && !looksLikeEmail) {
-    return NextResponse.json(
-      { error: "Enter a student username such as a1234567, or your student email." },
-      { status: 400 }
-    );
+  if (!username || (!looksLikeId && !looksLikeEmail)) {
+    recordLoginFailure(key);
+    return jsonOk({
+      ok: true,
+      message: "If an account exists, a reset email will be sent.",
+    });
   }
 
   if (!isSupabaseConfigured()) {
-    return NextResponse.json({
+    return jsonOk({
       ok: true,
-      source: "local",
       message: "If an account exists, a reset email will be sent.",
     });
   }
@@ -55,7 +67,10 @@ export async function POST(request: Request) {
   const mapped = studentEmailsForUsername(username);
   const supabase = getSupabaseAdmin() ?? getSupabaseAnon();
   if (!supabase) {
-    return NextResponse.json({ error: "Auth is not available." }, { status: 500 });
+    return jsonOk({
+      ok: true,
+      message: "If an account exists, a reset email will be sent.",
+    });
   }
 
   const localId = looksLikeEmail ? usernameFromEmail(username) : username;
@@ -75,9 +90,8 @@ export async function POST(request: Request) {
   }
 
   if (profile?.portal === "admin") {
-    return NextResponse.json({
+    return jsonOk({
       ok: true,
-      source: "supabase",
       message: "If an account exists, a reset email will be sent.",
     });
   }
@@ -91,9 +105,8 @@ export async function POST(request: Request) {
     await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   }
 
-  return NextResponse.json({
+  return jsonOk({
     ok: true,
-    source: "supabase",
     message: "If an account exists, a reset email will be sent.",
   });
 }

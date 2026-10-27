@@ -43,7 +43,7 @@ export default function TwoFactorPanel({
   }, [enroll, username]);
 
   const persistEnabled = async (secret?: string, recoveryCode?: string) => {
-    await fetch("/api/auth/mfa", {
+    const response = await fetch("/api/auth/mfa", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -53,7 +53,8 @@ export default function TwoFactorPanel({
         secret,
         recoveryCode,
       }),
-    }).catch(() => undefined);
+    });
+    return response;
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -69,14 +70,22 @@ export default function TwoFactorPanel({
         setError(result.error || "That code could not be verified.");
         return;
       }
-      await persistEnabled(result.record?.secret, result.record?.recoveryCode);
-      setBusy(false);
-      await onVerified();
-      return;
-    }
-
-    const local = await verifyMfaChallenge(key, code);
-    if (local.ok) {
+      try {
+        const response = await persistEnabled(
+          result.record?.secret,
+          result.record?.recoveryCode
+        );
+        if (!response.ok && response.status !== 503) {
+          const payload = (await response.json()) as { error?: string };
+          setBusy(false);
+          setError(payload.error || "That code could not be verified.");
+          return;
+        }
+      } catch {
+        setBusy(false);
+        setError("That code could not be verified.");
+        return;
+      }
       setBusy(false);
       await onVerified();
       return;
@@ -89,15 +98,26 @@ export default function TwoFactorPanel({
         body: JSON.stringify({ action: "verify", username: key, code }),
       });
       const payload = (await response.json()) as { error?: string; ok?: boolean };
-      setBusy(false);
-      if (!response.ok || !payload.ok) {
-        setError(payload.error || "That authentication code is not valid.");
+      if (response.ok && payload.ok) {
+        setBusy(false);
+        await onVerified();
         return;
       }
-      await onVerified();
+      if (response.status === 503) {
+        const local = await verifyMfaChallenge(key, code);
+        setBusy(false);
+        if (local.ok) {
+          await onVerified();
+          return;
+        }
+        setError(local.error || "That authentication code is not valid.");
+        return;
+      }
+      setBusy(false);
+      setError(payload.error || "That authentication code is not valid.");
     } catch {
       setBusy(false);
-      setError(local.error || "That authentication code is not valid.");
+      setError("That authentication code is not valid.");
     }
   };
 

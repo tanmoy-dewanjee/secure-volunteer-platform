@@ -54,9 +54,9 @@ export default function ResetPasswordPage() {
     setPasswordError("");
     setConfirmError("");
 
-    if (password.length < 8) {
-      setPasswordError("Password must contain at least 8 characters.");
-      openPopup("Check your details", "Your new password must be at least 8 characters.");
+    if (password.length < 12) {
+      setPasswordError("Password must contain at least 12 characters.");
+      openPopup("Check your details", "Your new password must be at least 12 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -128,7 +128,7 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <p className="mt-4 leading-7 text-gray-600">
-                Enter a new password for your volunteer account. Use at least 8
+                Enter a new password for your volunteer account. Use at least 12
                 characters.
               </p>
               <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-6">

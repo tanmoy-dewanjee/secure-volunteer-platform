@@ -150,15 +150,15 @@ export default function SignupPage() {
                 firstProblem =
                     "Please create a password.";
             }
-        } else if (password.length < 8) {
+        } else if (password.length < 12) {
             newErrors.password =
-                "Password must contain at least 8 characters.";
+                "Password must contain at least 12 characters.";
 
             valid = false;
 
             if (!firstProblem) {
                 firstProblem =
-                    "Your password must contain at least 8 characters.";
+                    "Your password must contain at least 12 characters.";
             }
         }
 
@@ -235,7 +235,7 @@ export default function SignupPage() {
                 source?: string;
                 error?: string;
             };
-            if (!response.ok && payload.source !== "local") {
+            if (!response.ok) {
                 openPopup(
                     "Could not create account",
                     payload.error ||
@@ -244,7 +244,11 @@ export default function SignupPage() {
                 return;
             }
         } catch {
-            // Local demo account is still stored above.
+            openPopup(
+                "Could not create account",
+                "Account creation is not available right now."
+            );
+            return;
         }
 
         const nextUsername = usernameFromSignupEmail(email);
