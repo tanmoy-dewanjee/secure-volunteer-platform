@@ -6,8 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSession } from "@/hooks/useSession";
 import {
   fetchApplications,
+  getApplications,
   persistWithdraw,
-  seedApplications,
   type ApplicationStatus,
   type VolunteerApplication,
 } from "@/lib/applications";
@@ -15,6 +15,7 @@ import {
 const statusFilters: Array<"All" | ApplicationStatus> = [
   "All",
   "Pending",
+  "Shortlisted",
   "Approved",
   "Rejected",
   "Withdrawn",
@@ -29,12 +30,12 @@ function statusClass(status: ApplicationStatus) {
 
 export default function ApplicationsBoard() {
   const { session } = useSession();
-  const [status, setStatus] = useState<(typeof statusFilters)[number]>("All");
-  const [applications, setApplications] =
-    useState<VolunteerApplication[]>(seedApplications);
+  const [status, setStatus] = useState<(typeof statusFilters)[number]>("Pending");
+  const [applications, setApplications] = useState<VolunteerApplication[]>([]);
 
   useEffect(() => {
     if (!session) return;
+    setApplications(getApplications(session.username));
     void fetchApplications(session.username).then(setApplications);
   }, [session]);
 
@@ -182,6 +183,8 @@ export default function ApplicationsBoard() {
                     <p className="mt-6 border-t border-gray-200 pt-5 text-sm leading-6 text-gray-600">
                       {application.status === "Pending" &&
                         "Waiting for a club coordinator to review this application."}
+                      {application.status === "Shortlisted" &&
+                        "Shortlisted. The club is still deciding on a final offer."}
                       {application.status === "Approved" &&
                         "Approved. Your assigned activity is in My Shifts."}
                       {application.status === "Rejected" &&

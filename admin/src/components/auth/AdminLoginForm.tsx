@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import QrCodeImage from "@/components/qr/QrCodeImage";
 import { signInAdminSession } from "@/utils/supabase/session";
 
 type Enrollment = {
@@ -74,12 +75,6 @@ export default function AdminLoginForm() {
   };
 
   if (step === "mfa") {
-    const qrUrl = enrollment
-      ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-          enrollment.otpauthUrl
-        )}`
-      : "";
-
     return (
       <form onSubmit={(event) => void handleMfa(event)} className="mt-8 space-y-6">
         {enrollment ? (
@@ -90,8 +85,11 @@ export default function AdminLoginForm() {
               code from the app.
             </p>
             <div className="grid gap-5 border border-gray-200 bg-[#f7f7f7] p-5 sm:grid-cols-[180px_1fr]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrUrl} alt="Authenticator QR code" width={180} height={180} />
+              <QrCodeImage
+                value={enrollment.otpauthUrl}
+                label="Authenticator QR code"
+                size={180}
+              />
               <div>
                 <p className="text-sm font-semibold">Secret key</p>
                 <p className="mt-1 break-all font-mono text-sm">{enrollment.secret}</p>

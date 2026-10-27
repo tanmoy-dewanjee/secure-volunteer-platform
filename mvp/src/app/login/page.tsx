@@ -8,6 +8,7 @@ import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { useSession } from "@/hooks/useSession";
+import { isMfaEnabled } from "@/lib/mfa";
 import { signIn, takeReturnPath } from "@/lib/session";
 import { signInStudentSession } from "@/utils/supabase/session";
 
@@ -112,6 +113,7 @@ export default function LoginPage() {
                 source?: string;
                 username?: string;
                 name?: string;
+                mfaEnabled?: boolean;
                 error?: string;
             };
             if (!response.ok && payload.source !== "local") {
@@ -126,9 +128,25 @@ export default function LoginPage() {
                 setUsername(account);
             }
             setAccountName(payload.name || "");
-            setAuthStep("enroll");
+            let remoteEnabled = Boolean(payload.mfaEnabled);
+            if (!remoteEnabled) {
+                try {
+                    const mfaRes = await fetch(
+                        `/api/auth/mfa?username=${encodeURIComponent(account)}`
+                    );
+                    const mfaPayload = (await mfaRes.json()) as { enabled?: boolean };
+                    remoteEnabled = Boolean(mfaPayload.enabled);
+                } catch {
+                    remoteEnabled = false;
+                }
+            }
+            setAuthStep(
+                remoteEnabled || isMfaEnabled(account) ? "verify" : "enroll"
+            );
         } catch {
-            setAuthStep("enroll");
+            setAuthStep(
+                isMfaEnabled(nextUsername) ? "verify" : "enroll"
+            );
         }
     };
 
@@ -249,7 +267,7 @@ export default function LoginPage() {
                     {authStep !== "password" ? (
                         <TwoFactorPanel
                             username={username.trim().toLowerCase()}
-                            mode="enroll"
+                            mode={authStep === "verify" ? "verify" : "enroll"}
                             onVerified={finishSignIn}
                             onCancel={() => setAuthStep("password")}
                         />
@@ -357,6 +375,14 @@ export default function LoginPage() {
                                     {passwordError}
                                 </p>
                             )}
+                            <p className="mt-3 text-sm">
+                                <Link
+                                    href="/forgot-password"
+                                    className="font-semibold text-[#7C00E8] hover:underline"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </p>
                         </div>
 
                         {/* Keep signed in */}

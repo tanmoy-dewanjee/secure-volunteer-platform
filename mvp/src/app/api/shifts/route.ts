@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { seedShifts } from "@/data/shifts";
+import { assignmentFromRow } from "@/lib/attendance";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
-import { shiftFromRow } from "@/lib/supabase/map";
 
 export async function GET(request: Request) {
   const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     source: "supabase",
-    shifts: data.map(shiftFromRow),
+    shifts: data.map(assignmentFromRow),
   });
 }
 

@@ -217,6 +217,242 @@ body {
   view-transition-name: site-footer;
 }
 
+.route-curtain {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.tide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  height: 135vh;
+  flex-direction: column;
+  color: white;
+  transform: translateY(100%);
+}
+
+.route-curtain.cover .tide {
+  animation: tide-flood 0.9s cubic-bezier(0.22, 0.68, 0.28, 1) forwards;
+}
+
+.route-curtain.reveal .tide {
+  animation: tide-recede 0.95s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+}
+
+.tide-crests {
+  position: relative;
+  height: 28vh;
+  min-height: 180px;
+  flex-shrink: 0;
+}
+
+.tide-wave {
+  position: absolute;
+  left: -10%;
+  bottom: -2px;
+  width: 220%;
+  height: 100%;
+}
+
+.tide-wave-back {
+  animation: wave-drift 5.4s linear infinite;
+  filter: blur(1px);
+}
+
+.tide-wave-mid {
+  animation: wave-drift-rev 3.8s linear infinite;
+}
+
+.tide-wave-front {
+  animation: wave-drift 2.6s linear infinite;
+}
+
+.tide-wave-foam {
+  animation: wave-drift-rev 2.1s linear infinite;
+  mix-blend-mode: screen;
+}
+
+.tide-body {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(125, 211, 252, 0.28), transparent 42%),
+    radial-gradient(ellipse at 80% 70%, rgba(167, 139, 250, 0.35), transparent 46%),
+    linear-gradient(180deg, #4c1d95 0%, #1e1b4b 38%, #0c4a6e 72%, #082f49 100%);
+}
+
+.tide-caustic {
+  position: absolute;
+  inset: -40% -20%;
+  background: repeating-linear-gradient(
+    118deg,
+    transparent 0 18px,
+    rgba(186, 230, 253, 0.08) 18px 22px,
+    transparent 22px 40px
+  );
+  animation: caustic-shift 2.8s linear infinite;
+  mix-blend-mode: screen;
+}
+
+.tide-bubble {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(224, 242, 254, 0.55);
+  background: rgba(224, 242, 254, 0.18);
+  animation: bubble-rise 2.4s ease-in infinite;
+}
+
+.tide-bubble-a {
+  left: 12%;
+  width: 10px;
+  height: 10px;
+  animation-duration: 2.1s;
+}
+
+.tide-bubble-b {
+  left: 28%;
+  width: 16px;
+  height: 16px;
+  animation-duration: 2.8s;
+  animation-delay: 0.3s;
+}
+
+.tide-bubble-c {
+  left: 54%;
+  width: 8px;
+  height: 8px;
+  animation-duration: 1.9s;
+  animation-delay: 0.15s;
+}
+
+.tide-bubble-d {
+  left: 71%;
+  width: 13px;
+  height: 13px;
+  animation-duration: 2.5s;
+  animation-delay: 0.55s;
+}
+
+.tide-bubble-e {
+  left: 86%;
+  width: 7px;
+  height: 7px;
+  animation-duration: 1.7s;
+  animation-delay: 0.4s;
+}
+
+.route-curtain-brand {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  animation: tide-bob 1.6s ease-in-out infinite;
+}
+
+.route-curtain-mark {
+  display: grid;
+  place-items: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.route-curtain-copy {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+@keyframes tide-flood {
+  from {
+    transform: translateY(100%);
+  }
+  68% {
+    transform: translateY(-3%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes tide-recede {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(102%);
+  }
+}
+
+@keyframes wave-drift {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-18%);
+  }
+}
+
+@keyframes wave-drift-rev {
+  from {
+    transform: translateX(-18%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes caustic-shift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(0.2deg);
+  }
+  to {
+    transform: translate3d(-8%, 6%, 0) rotate(-0.4deg);
+  }
+}
+
+@keyframes bubble-rise {
+  from {
+    bottom: 4%;
+    opacity: 0;
+    transform: translateX(0) scale(0.6);
+  }
+  18% {
+    opacity: 0.9;
+  }
+  to {
+    bottom: 88%;
+    opacity: 0;
+    transform: translateX(18px) scale(1);
+  }
+}
+
+@keyframes tide-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .browse-fade-up,
   .landing-reveal,
@@ -226,7 +462,12 @@ body {
   .landing-marquee,
   .page-enter,
   .result-card,
-  .filter-drawer {
+  .filter-drawer,
+  .tide,
+  .tide-wave,
+  .tide-caustic,
+  .tide-bubble,
+  .route-curtain-brand {
     animation: none;
   }
 

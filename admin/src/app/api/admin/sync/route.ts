@@ -59,7 +59,14 @@ export async function POST() {
     return NextResponse.json({ error: eventResult.error.message }, { status: 500 });
   }
 
-  await supabase.from("applications").upsert(ops.applications.map(applicationToRow));
+  await supabase.from("applications").upsert(
+    ops.applications.map((item) =>
+      applicationToRow(
+        item,
+        ops.volunteers.find((person) => person.id === item.volunteerId)?.studentUsername
+      )
+    )
+  );
   await supabase.from("volunteer_directory").upsert(ops.volunteers.map(volunteerToRow));
   await supabase.from("audit_logs").upsert(ops.audit.map(auditToRow));
   await supabase.from("announcements").upsert(ops.announcements.map(announcementToRow));

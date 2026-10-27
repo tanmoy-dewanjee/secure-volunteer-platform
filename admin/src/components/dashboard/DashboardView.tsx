@@ -22,7 +22,7 @@ export default function DashboardView({
     (event) => event.status === "Open" && event.placesAvailable > 0
   ).length;
   const live = events.filter((event) => event.status === "In progress").length;
-  const hours = 186;
+  const hours = applications.filter((item) => item.status === "Approved").length * 4;
 
   const byStatus = ["Pending", "Shortlisted", "Approved", "Rejected", "Withdrawn"].map(
     (status) => ({

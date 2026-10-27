@@ -14,6 +14,7 @@ import {
   ADMIN_OPS_EVENT,
   appendAudit,
   getOps,
+  hydrateOps,
   setOps,
   type OpsState,
 } from "@/lib/store/ops";
@@ -38,7 +39,7 @@ export function useAdminData() {
             source?: string;
             events?: Event[];
           };
-          if (payload.source === "supabase" && Array.isArray(payload.events)) {
+          if (Array.isArray(payload.events) && payload.events.length > 0) {
             setEvents(payload.events);
           } else {
             refreshEvents();
@@ -51,7 +52,8 @@ export function useAdminData() {
             source?: string;
             ops?: OpsState;
           };
-          if (payload.source === "supabase" && payload.ops) {
+          if (payload.ops) {
+            hydrateOps(payload.ops);
             setOpsState(payload.ops);
           } else {
             refreshOps();

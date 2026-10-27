@@ -1,8 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 
-import { events, getEventHost } from "@/data/events";
+import { getEventHost } from "@/data/events";
 import { studentClubs } from "@/data/organisations";
+import { useEventCatalog } from "@/hooks/useEventCatalog";
 
 const accessLinks = [
   {
@@ -50,6 +53,7 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const { events } = useEventCatalog();
   const featured = events.find((event) => event.featured) ?? events[0];
   const featuredHost = featured ? getEventHost(featured) : undefined;
   const openPlaces = events.reduce(

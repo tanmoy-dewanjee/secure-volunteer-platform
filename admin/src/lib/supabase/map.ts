@@ -107,12 +107,15 @@ export function eventFromRow(row: EventRow): Event {
   };
 }
 
-export function applicationToRow(item: AdminApplication) {
+export function applicationToRow(
+  item: AdminApplication,
+  volunteerUsername?: string
+) {
   return {
     id: item.id,
     event_id: item.eventId,
     event_title: item.eventTitle,
-    volunteer_username: item.volunteerId,
+    volunteer_username: volunteerUsername || item.volunteerId,
     volunteer_name: item.volunteerName,
     volunteer_id: item.volunteerId,
     role: item.role,

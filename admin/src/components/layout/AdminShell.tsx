@@ -221,7 +221,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
             </header>
-            <div className="page-enter flex-1">{children}</div>
+            <div className="flex-1">{children}</div>
           </div>
         </div>
       </div>

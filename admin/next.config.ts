@@ -1,8 +1,10 @@
+import path from "path";
 import type { NextConfig } from "next";
 
 const studentOrigin = process.env.STUDENT_ORIGIN ?? "http://localhost:3000";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.join(__dirname, ".."),
   images: {
     remotePatterns: [
       {

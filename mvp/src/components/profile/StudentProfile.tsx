@@ -63,13 +63,19 @@ export default function StudentProfile() {
       email: overrides.email || `${username}@adelaide.edu.au`,
     });
     setMfaOn(isMfaEnabled(username));
+    void fetch(`/api/auth/mfa?username=${encodeURIComponent(username)}`)
+      .then((response) => response.json())
+      .then((payload: { enabled?: boolean }) => {
+        if (payload.enabled) setMfaOn(true);
+      })
+      .catch(() => undefined);
 
     if (!session?.username) return;
     void fetch(`/api/profile?username=${encodeURIComponent(session.username)}`)
       .then((response) => response.json())
       .then((payload: { source?: string; profile?: StudentProfileData }) => {
-        if (payload.source === "supabase" && payload.profile) {
-          setProfile(payload.profile);
+        if (payload.profile) {
+          setProfile((current) => ({ ...current, ...payload.profile }));
         }
       })
       .catch(() => undefined);
@@ -402,6 +408,14 @@ export default function StudentProfile() {
                   onClick={() => {
                     disableMfa(profile.studentId);
                     setMfaOn(false);
+                    void fetch("/api/auth/mfa", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "disable",
+                        username: profile.studentId,
+                      }),
+                    });
                   }}
                   className="mt-4 border border-black px-5 py-2 text-sm font-semibold hover:bg-[#f3f1ed]"
                 >

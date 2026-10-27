@@ -35,6 +35,40 @@ export type EventRow = {
   custom_fields: Event["customFields"];
 };
 
+export function eventToRow(event: Event): EventRow {
+  return {
+    id: event.id,
+    title: event.title,
+    tagline: event.tagline,
+    category: event.category,
+    tags: event.tags,
+    description: event.description,
+    date: event.date,
+    start_time: event.startTime,
+    end_time: event.endTime,
+    campus: event.campus,
+    location: event.location,
+    organisation_id: event.organisationId,
+    contact_email: event.contactEmail,
+    capacity: event.capacity,
+    places_available: event.placesAvailable,
+    status: event.status,
+    requirements: event.requirements,
+    roles: event.roles,
+    shifts: event.shifts,
+    banner_image: event.bannerImage,
+    poster_image: event.posterImage,
+    featured: Boolean(event.featured),
+    trending_score: event.trendingScore,
+    application_deadline: event.applicationDeadline,
+    accessibility_notes: event.accessibilityNotes,
+    lat: typeof event.lat === "number" ? event.lat : null,
+    lng: typeof event.lng === "number" ? event.lng : null,
+    ask_resume: Boolean(event.askResume),
+    custom_fields: event.customFields ?? [],
+  };
+}
+
 export function eventFromRow(row: EventRow): Event {
   return {
     id: row.id,
@@ -122,6 +156,8 @@ export function applicationToRow(
 
 export function shiftFromRow(row: Record<string, unknown>): VolunteerShiftAssignment & {
   status: ShiftStatus;
+  qrToken?: string;
+  volunteerUsername?: string;
 } {
   return {
     id: String(row.id),
@@ -137,6 +173,10 @@ export function shiftFromRow(row: Record<string, unknown>): VolunteerShiftAssign
     meetingPoint: String(row.meeting_point || ""),
     notes: String(row.notes || ""),
     status: (row.status as ShiftStatus) || "Upcoming",
+    qrToken: row.qr_token ? String(row.qr_token) : undefined,
+    volunteerUsername: row.volunteer_username
+      ? String(row.volunteer_username)
+      : undefined,
   };
 }
 

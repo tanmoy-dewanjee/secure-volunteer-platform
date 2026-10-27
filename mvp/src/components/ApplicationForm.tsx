@@ -9,6 +9,9 @@ import {
 } from "@/data/application-fields";
 import { getEventHost, type Event } from "@/data/events";
 import { useSession } from "@/hooks/useSession";
+import { useEventCatalog } from "@/hooks/useEventCatalog";
+import { useStudentApplications } from "@/hooks/useStudentApplications";
+import { findApplicationConflict } from "@/lib/application-conflicts";
 import { persistApplication } from "@/lib/applications";
 
 type ApplicationFormProps = {
@@ -100,6 +103,8 @@ function ExtraField({ field }: { field: ApplicationField }) {
 
 export default function ApplicationForm({ event }: ApplicationFormProps) {
   const { session } = useSession();
+  const { events: catalog } = useEventCatalog();
+  const { applications } = useStudentApplications();
   const host = getEventHost(event);
   const extraFields = useMemo(() => getApplicationFields(event), [event]);
   const [roleId, setRoleId] = useState("");
@@ -108,6 +113,15 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
   const [shiftError, setShiftError] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
+  const [conflictMessage, setConflictMessage] = useState("");
+
+  const selectedShifts = event.shifts.filter((shift) => shiftIds.includes(shift.id));
+  const existingConflict = findApplicationConflict(
+    applications,
+    event,
+    catalog.length ? catalog : [event],
+    selectedShifts
+  );
 
   const selectedRole = event.roles.find((role) => role.id === roleId);
   const openShifts = event.shifts.filter((shift) => shift.placesAvailable > 0);
@@ -177,21 +191,76 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
       preferredShifts: shiftLabels,
       extraAnswers,
       motivation: String(form.get("motivation") || ""),
-    });
+      },
+      catalog.length ? catalog : [event],
+      selectedShifts
+    );
+
+    if (result.conflict) {
+      setAlreadyApplied(result.conflict.kind === "same-event");
+      setConflictMessage(result.conflict.message);
+      setSubmitted(true);
+      return;
+    }
 
     setAlreadyApplied(!result.created);
+    setConflictMessage("");
     setSubmitted(true);
   };
 
-  if (submitted) {
+  if (existingConflict && !submitted) {
     return (
-      <div role="status" className="border border-green-200 bg-green-50 p-8">
-        <p className="text-sm font-bold uppercase tracking-wide text-green-800">
-          Application submitted
+      <div role="status" className="border border-amber-200 bg-amber-50 p-8">
+        <p className="text-sm font-bold uppercase tracking-wide text-amber-800">
+          {existingConflict.kind === "same-event"
+            ? "Already applied"
+            : "Schedule clash"}
         </p>
-        <h2 className="mt-3 text-3xl font-semibold">Thank you for applying</h2>
+        <h2 className="mt-3 text-3xl font-semibold">
+          {existingConflict.kind === "same-event"
+            ? "You already applied for this event"
+            : "This clashes with another application"}
+        </h2>
+        <p className="mt-4 leading-7 text-gray-700">{existingConflict.message}</p>
+        <Link
+          href="/my-applications"
+          className="mt-7 inline-block bg-black px-6 py-3 font-semibold text-white hover:bg-purple-700"
+        >
+          View my applications
+        </Link>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    const blocked = Boolean(conflictMessage);
+    return (
+      <div
+        role="status"
+        className={`border p-8 ${
+          blocked
+            ? "border-amber-200 bg-amber-50"
+            : "border-green-200 bg-green-50"
+        }`}
+      >
+        <p
+          className={`text-sm font-bold uppercase tracking-wide ${
+            blocked ? "text-amber-800" : "text-green-800"
+          }`}
+        >
+          {blocked
+            ? alreadyApplied
+              ? "Already applied"
+              : "Schedule clash"
+            : "Application submitted"}
+        </p>
+        <h2 className="mt-3 text-3xl font-semibold">
+          {blocked ? "This application was not submitted" : "Thank you for applying"}
+        </h2>
         <p className="mt-4 leading-7 text-gray-700">
-          {alreadyApplied ? (
+          {blocked ? (
+            conflictMessage
+          ) : alreadyApplied ? (
             <>
               You already have an open application for{" "}
               <strong>{event.title}</strong>.

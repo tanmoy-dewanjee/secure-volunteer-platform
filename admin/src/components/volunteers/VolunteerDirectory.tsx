@@ -135,9 +135,10 @@ export default function VolunteerDirectory({
                 className="px-4 py-2 text-sm font-semibold text-red-700"
                 onClick={() => {
                   const ops = getOps();
+                  const current = volunteers.length ? volunteers : ops.volunteers;
                   setOps({
                     ...ops,
-                    volunteers: ops.volunteers.map((item) =>
+                    volunteers: current.map((item) =>
                       item.id === open.id
                         ? {
                             ...item,

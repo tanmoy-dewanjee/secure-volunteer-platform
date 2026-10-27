@@ -4,13 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import AttendanceBoard from "@/components/events/AttendanceBoard";
 import EventMap from "@/components/maps/EventMap";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useToast } from "@/components/ui/Toast";
 import { getEventCoordinates, getEventHost, type Event } from "@/data/events";
 import { eventTabs, type EventTab } from "@/lib/routing";
 import type { AdminApplication, DirectoryVolunteer, SwapRow } from "@/lib/store/ops";
-import { appendAudit, getOps, setOps } from "@/lib/store/ops";
+import { getOps, setOps } from "@/lib/store/ops";
 
 export default function EventWorkspace({
   event,
@@ -131,7 +132,8 @@ export default function EventWorkspace({
       {tab === "shifts" ? (
         <div className="mt-6 space-y-4">
           <p className="text-sm text-gray-500">
-            Colour is fill: green full, amber filling, purple open.
+            Colour is fill: green full, amber filling, purple open. Station QR is
+            bound to this event in the backend.
           </p>
           {roster.map(({ shift, assigned, needed, pct }) => (
             <article key={shift.id} className="rounded-xl border border-gray-200 bg-white p-5">
@@ -142,14 +144,6 @@ export default function EventWorkspace({
                     {shift.startTime}–{shift.endTime} · {assigned}/{needed || shift.placesAvailable} filled
                   </p>
                 </div>
-                <img
-                  alt="Shift QR"
-                  width={72}
-                  height={72}
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=72x72&data=${encodeURIComponent(
-                    `shift:${event.id}:${shift.id}`
-                  )}`}
-                />
               </div>
               <div className="mt-3 h-2 overflow-hidden bg-gray-100">
                 <div
@@ -161,6 +155,7 @@ export default function EventWorkspace({
               </div>
             </article>
           ))}
+          <AttendanceBoard event={event} mode="shifts" />
           {swaps.filter((item) => item.status === "Pending").length > 0 ? (
             <section className="rounded-xl border border-gray-200 bg-white p-5">
               <h2 className="font-semibold">Swap / drop queue</h2>
@@ -239,40 +234,7 @@ export default function EventWorkspace({
         </div>
       ) : null}
 
-      {tab === "attendance" ? (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold">Check-in</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Toggle attendance or scan the shift QR. Hours calculate from check-in
-            to check-out.
-          </p>
-          <ul className="mt-4 space-y-3">
-            {relatedApps
-              .filter((item) => item.status === "Approved")
-              .map((item) => (
-                <li key={item.id} className="flex items-center justify-between border border-gray-100 px-4 py-3">
-                  <span>{item.volunteerName}</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      appendAudit({
-                        at: new Date().toLocaleString("en-AU"),
-                        who: "rotaract.admin",
-                        action: "attendance.mark",
-                        target: item.volunteerName,
-                        ip: "127.0.0.1",
-                      });
-                      toast(`Checked in ${item.volunteerName}.`);
-                    }}
-                    className="bg-black px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700"
-                  >
-                    Check in
-                  </button>
-                </li>
-              ))}
-          </ul>
-        </div>
-      ) : null}
+      {tab === "attendance" ? <AttendanceBoard event={event} mode="attendance" /> : null}
 
       {tab === "announcements" ? (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">

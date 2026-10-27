@@ -1,5 +1,12 @@
+import type { Event, VolunteerShift } from "@/data/events";
+import {
+  findApplicationConflict,
+  type ApplicationConflict,
+} from "@/lib/application-conflicts";
+
 export type ApplicationStatus =
   | "Pending"
+  | "Shortlisted"
   | "Approved"
   | "Rejected"
   | "Withdrawn";
@@ -54,16 +61,22 @@ export const seedApplications: VolunteerApplication[] = [
 
 const keyFor = (username: string) => `svp_applications_${username}`;
 
+function isApplication(value: unknown): value is VolunteerApplication {
+  if (!value || typeof value !== "object") return false;
+  const item = value as VolunteerApplication;
+  return Boolean(item.id && item.eventId && item.status);
+}
+
 export function getApplications(username: string): VolunteerApplication[] {
-  if (typeof window === "undefined") return seedApplications;
+  if (typeof window === "undefined") return [];
 
   try {
     const raw = window.localStorage.getItem(keyFor(username));
-    if (!raw) return seedApplications;
-    const parsed = JSON.parse(raw) as VolunteerApplication[];
-    return Array.isArray(parsed) ? parsed : seedApplications;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter(isApplication) : [];
   } catch {
-    return seedApplications;
+    return [];
   }
 }
 
@@ -74,20 +87,45 @@ export function saveApplications(
   window.localStorage.setItem(keyFor(username), JSON.stringify(applications));
 }
 
+export function mergeApplications(
+  remote: VolunteerApplication[],
+  local: VolunteerApplication[]
+) {
+  const byId = new Map<string, VolunteerApplication>();
+  for (const item of remote) byId.set(item.id, item);
+  for (const item of local) {
+    if (!byId.has(item.id)) byId.set(item.id, item);
+  }
+  return [...byId.values()].sort((a, b) => {
+    if (a.submittedDate === b.submittedDate) return a.id > b.id ? -1 : 1;
+    return a.submittedDate > b.submittedDate ? -1 : 1;
+  });
+}
+
 export function addApplication(
   username: string,
-  application: Omit<VolunteerApplication, "id" | "submittedDate" | "status">
+  application: Omit<VolunteerApplication, "id" | "submittedDate" | "status">,
+  catalog: Event[] = [],
+  selectedShifts?: VolunteerShift[]
 ) {
   const current = getApplications(username);
-  const duplicate = current.find(
-    (item) =>
-      item.eventId === application.eventId &&
-      item.status !== "Withdrawn" &&
-      item.status !== "Rejected"
+  const candidate = catalog.find((item) => item.id === application.eventId) ?? {
+    id: application.eventId,
+    title: application.eventTitle,
+    date: application.eventDate,
+    startTime: "12:00 AM",
+    endTime: "11:59 PM",
+    shifts: [],
+  };
+  const conflict = findApplicationConflict(
+    current,
+    candidate,
+    catalog,
+    selectedShifts
   );
 
-  if (duplicate) {
-    return { application: duplicate, created: false };
+  if (conflict) {
+    return { application: conflict.application, created: false, conflict };
   }
 
   const next: VolunteerApplication = {
@@ -102,7 +140,7 @@ export function addApplication(
   };
 
   saveApplications(username, [next, ...current]);
-  return { application: next, created: true };
+  return { application: next, created: true as const, conflict: null };
 }
 
 export function withdrawApplication(username: string, id: string) {
@@ -116,42 +154,82 @@ export function withdrawApplication(username: string, id: string) {
 }
 
 export async function fetchApplications(username: string) {
+  const local = getApplications(username);
   try {
     const response = await fetch(
-      `/api/applications?username=${encodeURIComponent(username)}`
+      `/api/applications?username=${encodeURIComponent(username)}`,
+      { credentials: "include", cache: "no-store" }
     );
     if (response.ok) {
       const payload = (await response.json()) as {
-        source?: string;
         applications?: VolunteerApplication[];
       };
-      if (payload.source === "supabase" && Array.isArray(payload.applications)) {
-        saveApplications(username, payload.applications);
-        return payload.applications;
-      }
+      const remote = Array.isArray(payload.applications)
+        ? payload.applications.filter(isApplication)
+        : [];
+      const merged = mergeApplications(remote, local);
+      saveApplications(username, merged);
+      return merged;
     }
   } catch {
     // Local cache remains the fallback.
   }
-  return getApplications(username);
+  return local;
 }
 
 export async function persistApplication(
   username: string,
   name: string,
-  application: Omit<VolunteerApplication, "id" | "submittedDate" | "status">
+  application: Omit<VolunteerApplication, "id" | "submittedDate" | "status">,
+  catalog: Event[] = [],
+  selectedShifts?: VolunteerShift[]
 ) {
-  const result = addApplication(username, application);
+  const result = addApplication(username, application, catalog, selectedShifts);
+  if (!result.created) {
+    return result;
+  }
   try {
-    await fetch("/api/applications", {
+    const response = await fetch("/api/applications", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username,
         name,
         application: result.application,
+        selectedShiftIds: selectedShifts?.map((shift) => shift.id) ?? [],
       }),
     });
+    const payload = (await response.json()) as {
+      created?: boolean;
+      application?: VolunteerApplication;
+      conflict?: ApplicationConflict;
+      error?: string;
+    };
+    if (response.status === 409 || payload.conflict) {
+      saveApplications(
+        username,
+        getApplications(username).filter((item) => item.id !== result.application.id)
+      );
+      return {
+        application: payload.conflict?.application ?? result.application,
+        created: false,
+        conflict: payload.conflict ?? result.conflict,
+      };
+    }
+    if (response.ok && payload.application && isApplication(payload.application)) {
+      const current = getApplications(username).filter(
+        (item) =>
+          item.id !== result.application.id &&
+          item.id !== payload.application?.id
+      );
+      saveApplications(username, [payload.application, ...current]);
+      return {
+        application: payload.application,
+        created: payload.created !== false && result.created,
+        conflict: null,
+      };
+    }
   } catch {
     // Already stored locally.
   }
@@ -163,6 +241,7 @@ export async function persistWithdraw(username: string, id: string) {
   try {
     await fetch(`/api/applications/${encodeURIComponent(id)}`, {
       method: "PATCH",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, status: "Withdrawn" }),
     });

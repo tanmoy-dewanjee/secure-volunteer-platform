@@ -16,11 +16,14 @@ import {
   getEventHostLabel,
 } from "@/data/events";
 import { useCatalogEvent, useEventCatalog } from "@/hooks/useEventCatalog";
+import { useStudentApplications } from "@/hooks/useStudentApplications";
+import { findApplicationConflict } from "@/lib/application-conflicts";
 import { getSimilarEvents } from "@/lib/recommendations";
 
 export default function EventDetailsView({ eventId }: { eventId: string }) {
   const { event, ready } = useCatalogEvent(eventId);
   const { events } = useEventCatalog();
+  const { applications } = useStudentApplications();
 
   if (!event && !ready) {
     return (
@@ -40,6 +43,11 @@ export default function EventDetailsView({ eventId }: { eventId: string }) {
   const canApply = canApplyToEvent(event);
   const coords = getEventCoordinates(event);
   const inProgress = event.status === "In progress";
+  const applyConflict = findApplicationConflict(
+    applications,
+    event,
+    events.length ? events : [event]
+  );
 
   return (
     <main className="min-h-screen bg-white text-[#171717]">
@@ -218,7 +226,22 @@ export default function EventDetailsView({ eventId }: { eventId: string }) {
               </div>
             </dl>
 
-            {canApply ? (
+            {canApply && applyConflict ? (
+              <div className="mt-6 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-gray-700">
+                <p className="font-semibold">
+                  {applyConflict.kind === "same-event"
+                    ? "You already applied for this event"
+                    : "This clashes with another application"}
+                </p>
+                <p className="mt-2 leading-6">{applyConflict.message}</p>
+                <Link
+                  href="/my-applications"
+                  className="mt-3 inline-block font-semibold text-purple-700 hover:underline"
+                >
+                  View my applications →
+                </Link>
+              </div>
+            ) : canApply ? (
               <Link
                 href={`/events/${event.id}/apply`}
                 className="mt-6 block bg-black px-6 py-3 text-center font-semibold text-white transition hover:bg-purple-700"

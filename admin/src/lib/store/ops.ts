@@ -325,6 +325,10 @@ export function getOps() {
   return readOps();
 }
 
+export function hydrateOps(next: OpsState) {
+  writeOps(next);
+}
+
 export function setOps(next: OpsState) {
   writeOps(next);
   if (typeof window !== "undefined") {
@@ -338,6 +342,8 @@ export function setOps(next: OpsState) {
 
 export function appendAudit(row: Omit<AuditRow, "id">) {
   const ops = readOps();
-  ops.audit = [{ ...row, id: `aud-${Date.now()}` }, ...ops.audit];
-  writeOps(ops);
+  setOps({
+    ...ops,
+    audit: [{ ...row, id: `aud-${Date.now()}` }, ...ops.audit],
+  });
 }

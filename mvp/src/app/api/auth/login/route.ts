@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("username, display_name, portal, role")
+      .select("username, display_name, portal, role, profile_data")
       .eq("id", data.user.id)
       .maybeSingle();
 
@@ -61,10 +61,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const mfa = (profile?.profile_data as { mfa?: { enabled?: boolean; secret?: string } } | null)
+      ?.mfa;
     return NextResponse.json({
       source: "supabase",
       username: profile?.username || usernameFromEmail(email),
       name: profile?.display_name || usernameFromEmail(email),
+      mfaEnabled: Boolean(mfa?.enabled && mfa?.secret),
       accessToken: data.session?.access_token,
     });
   }

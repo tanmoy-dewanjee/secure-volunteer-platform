@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import StatusBadge from "@/components/ui/StatusBadge";
 import { useToast } from "@/components/ui/Toast";
+import type { Event } from "@/data/events";
 import {
   getOps,
   setOps,
@@ -23,9 +24,11 @@ const tabs: AppStatus[] = [
 export default function ApplicationInbox({
   applications,
   volunteers,
+  events: catalogue = [],
 }: {
   applications: AdminApplication[];
   volunteers: DirectoryVolunteer[];
+  events?: Event[];
 }) {
   const toast = useToast();
   const [tab, setTab] = useState<AppStatus>("Pending");
@@ -45,35 +48,63 @@ export default function ApplicationInbox({
     [applications, tab, eventFilter]
   );
   const open = applications.find((item) => item.id === openId);
-  const profile = volunteers.find((item) => item.id === open?.volunteerId);
+  const profile = volunteers.find(
+    (item) =>
+      item.id === open?.volunteerId ||
+      item.studentUsername === open?.volunteerId
+  );
 
   const setStatus = (ids: string[], status: AppStatus) => {
     const ops = getOps();
-    setOps({
-      ...ops,
-      applications: ops.applications.map((item) =>
-        ids.includes(item.id)
-          ? {
-              ...item,
-              status,
-              history: [
-                ...item.history,
-                {
-                  at: new Date().toLocaleString("en-AU"),
-                  from: item.status,
-                  to: status,
-                  by: "rotaract.admin",
-                },
-              ],
-            }
-          : item
-      ),
-    });
-    toast(
-      status === "Approved"
-        ? "Approved. Assign a shift from the event workspace."
-        : `Updated to ${status}.`
+    const current = applications.length ? applications : ops.applications;
+    const nextApps = current.map((item) =>
+      ids.includes(item.id)
+        ? {
+            ...item,
+            status,
+            history: [
+              ...item.history,
+              {
+                at: new Date().toLocaleString("en-AU"),
+                from: item.status,
+                to: status,
+                by: "rotaract.admin",
+              },
+            ],
+          }
+        : item
     );
+    setOps({ ...ops, applications: nextApps });
+
+    if (status === "Approved") {
+      void Promise.all(
+        ids.map((id) => {
+          const app = applications.find((item) => item.id === id);
+          if (!app) return Promise.resolve();
+          const volunteer = volunteers.find((item) => item.id === app.volunteerId);
+          const event = catalogue.find((item) => item.id === app.eventId);
+          return fetch("/api/admin/attendance", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "assign",
+              eventId: app.eventId,
+              eventTitle: app.eventTitle,
+              volunteerUsername:
+                volunteer?.studentUsername || app.volunteerId,
+              role: app.role,
+              campus: app.campus || event?.campus,
+              date: event?.date,
+              startTime: event?.startTime,
+              endTime: event?.endTime,
+              location: event?.location,
+            }),
+          });
+        })
+      ).then(() => toast("Approved and assigned a shift with a volunteer QR."));
+    } else {
+      toast(`Updated to ${status}.`);
+    }
     setSelected([]);
   };
 

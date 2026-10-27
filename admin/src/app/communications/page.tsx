@@ -57,8 +57,9 @@ function Composer() {
   const send = (event: FormEvent) => {
     event.preventDefault();
     const opsState = getOps();
+    const live = ops.applications.length ? ops : opsState;
     setOps({
-      ...opsState,
+      ...live,
       announcements: [
         {
           id: `ann-${Date.now()}`,
