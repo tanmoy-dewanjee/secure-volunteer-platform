@@ -18,6 +18,9 @@ export function isTrustedOrigin(request: Request) {
     if (extra) allowed.add(extra.replace(/\/$/, ""));
   }
 
+  const site = request.headers.get("sec-fetch-site");
+  if (site === "same-origin" || site === "none") return true;
+
   const origin = request.headers.get("origin");
   if (origin) return allowed.has(origin.replace(/\/$/, ""));
   const referer = request.headers.get("referer");

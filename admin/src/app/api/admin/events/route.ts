@@ -52,22 +52,26 @@ export async function GET() {
   }
 
   if (!data?.length) {
-    const rows = seedEvents.map(eventToRow);
-    await supabase.from("events").upsert(rows);
+    await supabase.from("events").upsert(seedEvents.map(eventToRow));
+    const seeded = await supabase
+      .from("events")
+      .select("*")
+      .is("deleted_at", null)
+      .order("trending_score", { ascending: false });
+    const rows = (seeded.data as EventRow[] | null) ?? [];
     return NextResponse.json({
-      source: "supabase",
+      source: rows.length ? "supabase" : stored.length ? "live" : "local",
       seeded: true,
-      events: mergeEvents([seedEvents, stored]),
+      events: mergeEvents([
+        rows.length ? rows.map(eventFromRow) : seedEvents,
+        stored,
+      ]),
     });
   }
 
   return NextResponse.json({
     source: "supabase",
-    events: mergeEvents([
-      seedEvents,
-      (data as EventRow[]).map(eventFromRow),
-      stored,
-    ]),
+    events: mergeEvents([(data as EventRow[]).map(eventFromRow), stored]),
   });
 }
 

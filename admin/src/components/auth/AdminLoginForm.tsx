@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import QrCodeImage from "@/components/qr/QrCodeImage";
+import { markLoginWave } from "@/lib/login-wave";
 import { signInAdminSession } from "@/utils/supabase/session";
 
 type Enrollment = {
@@ -44,10 +45,21 @@ export default function AdminLoginForm() {
       error?: string;
       enrolled?: boolean;
       enrollment?: Enrollment;
+      mfaRequired?: boolean;
     };
     setBusy(false);
     if (!response.ok) {
       setError(data.error || "Sign-in details were not recognised.");
+      return;
+    }
+    if (data.mfaRequired === false) {
+      const established = await signInAdminSession(username, password);
+      if (!established) {
+        setError("Could not establish a secure session. Try again.");
+        return;
+      }
+      markLoginWave();
+      finish();
       return;
     }
     setEnrollment(data.enrolled ? null : data.enrollment ?? null);
@@ -204,7 +216,7 @@ export default function AdminLoginForm() {
         disabled={busy}
         className="w-full bg-black px-6 py-4 text-lg font-semibold text-white transition hover:bg-[#7C00E8] disabled:opacity-60"
       >
-        {busy ? "Checking..." : "Continue to 2FA"}
+        {busy ? "Checking..." : "Sign in"}
       </button>
     </form>
   );

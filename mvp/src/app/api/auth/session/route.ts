@@ -1,10 +1,16 @@
 import { jsonOk } from "@/lib/security/http";
-import { getAuthenticatedUsername } from "@/lib/security/student-session";
+import { getAuthenticatedStudent } from "@/lib/security/student-session";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export async function GET() {
-  const username = await getAuthenticatedUsername();
+  if (!isSupabaseConfigured()) {
+    return jsonOk({ configured: false, authenticated: false, username: null });
+  }
+  const student = await getAuthenticatedStudent();
   return jsonOk({
-    authenticated: Boolean(username),
-    username: username || null,
+    configured: true,
+    authenticated: Boolean(student),
+    username: student?.username ?? null,
+    name: student?.name ?? null,
   });
 }

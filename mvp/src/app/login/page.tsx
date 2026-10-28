@@ -8,6 +8,13 @@ import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { useSession } from "@/hooks/useSession";
+import {
+    DEMO_STUDENT_PASSWORD,
+    DEMO_STUDENT_USERNAME,
+    isDemoStudentAccount,
+    isStudentLoginIdentity,
+} from "@/lib/demo-accounts";
+import { markLoginWave } from "@/lib/login-wave";
 import { isMfaEnabled } from "@/lib/mfa";
 import { signIn, takeReturnPath } from "@/lib/session";
 import { signInStudentSession } from "@/utils/supabase/session";
@@ -19,7 +26,7 @@ export default function LoginPage() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [keepSignedIn, setKeepSignedIn] = useState(false);
+    const [keepSignedIn, setKeepSignedIn] = useState(true);
 
     const [usernameError, setUsernameError] = useState("");
     const [passwordError, setPasswordError] = useState("");
@@ -31,12 +38,6 @@ export default function LoginPage() {
         "password"
     );
     const [accountName, setAccountName] = useState("");
-
-    // Demo student ID format.
-    // Example: a1991246
-    const isValidStudentId = (value: string) => {
-        return /^a\d{7}$/i.test(value.trim());
-    };
 
     // Show a popup inside our demo website.
     const openPopup = (title: string, message: string) => {
@@ -60,13 +61,13 @@ export default function LoginPage() {
             setUsernameError("University username is required.");
             firstProblem = "Please enter your university username.";
             valid = false;
-        } else if (!isValidStudentId(username)) {
+        } else if (!isStudentLoginIdentity(username)) {
             setUsernameError(
-                "Enter a valid student username, for example a1234567."
+                "Enter a student ID such as a1234567, or your student email."
             );
 
             firstProblem =
-                "Your university username should start with 'a' followed by 7 digits.";
+                "Use a university username such as a1234567, or your Adelaide University student email.";
 
             valid = false;
         }
@@ -114,6 +115,7 @@ export default function LoginPage() {
                 username?: string;
                 name?: string;
                 mfaEnabled?: boolean;
+                mfaRequired?: boolean;
                 error?: string;
             };
             if (!response.ok) {
@@ -128,6 +130,12 @@ export default function LoginPage() {
                 setUsername(account);
             }
             setAccountName(payload.name || "");
+            const skipMfa =
+                payload.mfaRequired === false || isDemoStudentAccount(account);
+            if (skipMfa) {
+                await completeSignIn(account, payload.name || "");
+                return;
+            }
             let remoteEnabled = Boolean(payload.mfaEnabled);
             if (!remoteEnabled) {
                 try {
@@ -149,9 +157,9 @@ export default function LoginPage() {
         }
     };
 
-    const finishSignIn = async () => {
+    const completeSignIn = async (account: string, name?: string) => {
         const established = await signInStudentSession(
-            username.trim().toLowerCase(),
+            account.trim().toLowerCase(),
             password
         );
         if (!established) {
@@ -163,19 +171,16 @@ export default function LoginPage() {
             return;
         }
         signIn({
-            username: username.trim().toLowerCase(),
-            name: accountName || undefined,
+            username: account.trim().toLowerCase(),
+            name: name || accountName || undefined,
             keepSignedIn,
         });
+        markLoginWave();
+        router.push(takeReturnPath() || "/profile");
+    };
 
-        openPopup(
-            "Sign in successful",
-            "Two-factor authentication is active. You are now signed in to the Student / Volunteer Portal."
-        );
-
-        setTimeout(() => {
-            router.push(takeReturnPath() || "/profile");
-        }, 900);
+    const finishSignIn = async () => {
+        await completeSignIn(username.trim().toLowerCase(), accountName);
     };
 
     return (
@@ -288,8 +293,9 @@ export default function LoginPage() {
                     </h2>
 
                     <p className="mt-4 leading-7 text-gray-600">
-                        Enter your university username and password. The next
-                        step is authenticator-app two-factor authentication.
+                        Enter your university username and password. New
+                        student accounts confirm with an authenticator app.
+                        The shared demo account does not.
                     </p>
 
                     <form
@@ -315,7 +321,7 @@ export default function LoginPage() {
                                     setUsername(event.target.value);
                                     setUsernameError("");
                                 }}
-                                placeholder="a1234567"
+                                placeholder="a1991246"
                                 autoComplete="username"
                                 aria-invalid={Boolean(usernameError)}
                                 className={`mt-2 w-full border px-4 py-3.5 text-lg outline-none transition focus:ring-2 focus:ring-purple-200 ${usernameError
@@ -334,7 +340,7 @@ export default function LoginPage() {
                             )}
 
                             <p className="mt-2 text-sm text-gray-500">
-                                Example: a1234567
+                                Example: a1991246 or a1991246@adelaide.edu.au
                             </p>
                         </div>
 
@@ -419,7 +425,7 @@ export default function LoginPage() {
                             type="submit"
                             className="w-full bg-black px-6 py-4 text-lg font-semibold text-white transition hover:bg-[#7C00E8] focus:outline-none focus:ring-2 focus:ring-[#7C00E8] focus:ring-offset-2"
                         >
-                            Continue to 2FA
+                            Sign in
                         </button>
                     </form>
 
@@ -436,18 +442,16 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Demo notice */}
                     <div className="mt-8 border-l-4 border-[#7C00E8] bg-[#f4ecff] p-4">
                         <p className="font-semibold text-purple-900">
-                            Authenticator 2FA
+                            Student demo account
                         </p>
-
                         <p className="mt-1 text-sm leading-6 text-gray-700">
-                            This educational prototype does not connect to
-                        Adelaide University&apos;s production Single Sign-On.
-                        Sign-in uses a password plus TOTP from an authenticator
-                        app. The portal never displays a live one-time code.
-                    </p>
+                            Username <strong>{DEMO_STUDENT_USERNAME}</strong>.
+                            Password <strong>{DEMO_STUDENT_PASSWORD}</strong>.
+                            Demo accounts skip 2FA. New student accounts still
+                            enrol an authenticator app.
+                        </p>
                     </div>
                     </>
                     )}

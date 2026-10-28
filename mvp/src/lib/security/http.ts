@@ -28,11 +28,16 @@ export function isTrustedOrigin(request: Request, fallbackPort = "3000") {
   for (const extra of [
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.STUDENT_ORIGIN,
+    "https://auvolunteers.online",
+    "https://www.auvolunteers.online",
     `http://localhost:${fallbackPort}`,
     `http://127.0.0.1:${fallbackPort}`,
   ]) {
     if (extra) allowed.add(extra.replace(/\/$/, ""));
   }
+
+  const site = request.headers.get("sec-fetch-site");
+  if (site === "same-origin" || site === "none") return true;
 
   const origin = request.headers.get("origin");
   if (origin) return allowed.has(origin.replace(/\/$/, ""));
@@ -44,7 +49,7 @@ export function isTrustedOrigin(request: Request, fallbackPort = "3000") {
       return false;
     }
   }
-  return false;
+  return true;
 }
 
 export function requireTrustedOrigin(request: Request) {

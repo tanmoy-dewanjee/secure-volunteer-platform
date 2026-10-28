@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
-import { requestStudentPasswordReset } from "@/utils/supabase/session";
 
 function ForgotPasswordForm() {
   const searchParams = useSearchParams();
@@ -55,15 +54,30 @@ function ForgotPasswordForm() {
 
     setBusy(true);
     try {
-      await fetch("/api/auth/forgot-password", {
+      const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: value }),
       });
-      try {
-        await requestStudentPasswordReset(value);
-      } catch {
-        /* API already requested the reset when the client client is unavailable. */
+      const payload = (await response.json()) as {
+        demo?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!response.ok) {
+        openPopup(
+          "Could not send reset email",
+          payload.error || "Please try again in a moment."
+        );
+        return;
+      }
+      if (payload.demo) {
+        openPopup(
+          "Demo account",
+          payload.message ||
+            "Use the published demo password instead of a reset email."
+        );
+        return;
       }
       setSent(true);
     } catch {
@@ -202,7 +216,7 @@ export default function ForgotPasswordPage() {
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-8 text-gray-600">
             We send a one-time link to your student email. You choose a new
-            password on this portal, then sign in with 2FA as usual.
+            password on this portal, then sign in.
           </p>
         </div>
         <div className="mx-auto w-full max-w-xl bg-white p-8 shadow-sm md:p-10">

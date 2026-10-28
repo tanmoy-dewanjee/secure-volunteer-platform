@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
           </p>
           <h2 className="mt-3 text-3xl font-semibold">Sign in</h2>
           <p className="mt-4 leading-7 text-gray-600">
-            Use a coordinator account, then confirm with an authenticator app.
+            Use a coordinator demo account. These accounts skip 2FA.
           </p>
           <Suspense>
             <AdminLoginForm />
@@ -38,9 +38,8 @@ export default function AdminLoginPage() {
             <p className="mt-1 text-sm leading-6 text-gray-700">
               Username <strong>rotaract.admin</strong>,{" "}
               <strong>super.admin</strong> or <strong>viewer.admin</strong>.
-              Password <strong>Coordinator1!</strong>. First sign-in enrols
-              TOTP on your authenticator app; later sign-ins need the current
-              app code. Student IDs such as a1234567 are refused.
+              Password <strong>Coordinator1!</strong>. Demo coordinator
+              accounts skip 2FA. Student IDs such as a1234567 are refused.
             </p>
           </div>
         </div>

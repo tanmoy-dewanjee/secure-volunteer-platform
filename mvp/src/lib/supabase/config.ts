@@ -34,6 +34,15 @@ export function getSupabaseAnon(): SupabaseClient | null {
   });
 }
 
+export function getSupabaseAuthAdmin(): SupabaseClient | null {
+  const url = supabaseUrl();
+  const key = secretKey();
+  if (!url || !key) return null;
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 export function getSupabaseAdmin(): SupabaseClient | null {
   const url = supabaseUrl();
   const key = secretKey();
@@ -46,9 +55,7 @@ export function getSupabaseAdmin(): SupabaseClient | null {
       },
     });
   } catch {
-    return createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    return getSupabaseAuthAdmin();
   }
 }
 

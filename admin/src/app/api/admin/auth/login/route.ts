@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -13,8 +12,7 @@ import {
   loginBlocked,
   recordLoginFailure,
 } from "@/lib/auth/lockout";
-import { beginAdminEnrollment, getAdminMfa } from "@/lib/auth/mfa-store";
-import { MFA_COOKIE, signAdminToken } from "@/lib/auth/session";
+import { setSessionCookie } from "@/lib/auth/session";
 
 const bodySchema = z.object({
   username: z.string().trim().min(1).max(80),
@@ -56,35 +54,15 @@ export async function POST(request: Request) {
   }
 
   clearLoginFailures(key);
-  const pending = await signAdminToken(
-    {
-      sub: account.id,
-      username: account.username,
-      role: account.role,
-      displayName: account.displayName,
-    },
-    10
-  );
-  const jar = await cookies();
-  jar.set(MFA_COOKIE, pending, {
-    httpOnly: true,
-    secure:
-      process.env.COOKIE_SECURE === "true" ||
-      process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/",
-    maxAge: 10 * 60,
+  await setSessionCookie({
+    sub: account.id,
+    username: account.username,
+    role: account.role,
+    displayName: account.displayName,
   });
-
-  const existing = getAdminMfa(account.username);
-  if (existing?.enabled) {
-    return NextResponse.json({ mfaRequired: true, enrolled: true });
-  }
-
-  const enrollment = beginAdminEnrollment(account.username, account.email);
   return NextResponse.json({
-    mfaRequired: true,
-    enrolled: false,
-    enrollment,
+    mfaRequired: false,
+    ok: true,
+    role: account.role,
   });
 }

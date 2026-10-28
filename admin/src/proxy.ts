@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { readAdminToken } from "@/lib/auth/session";
+import {
+  readAdminToken,
+  sessionCookieOptions,
+  signAdminToken,
+} from "@/lib/auth/session";
 import { ADMIN_COOKIE, PUBLIC_PATHS } from "@/lib/security/constants";
 import { updateSession } from "@/utils/supabase/middleware";
 
@@ -47,6 +51,12 @@ export async function proxy(request: NextRequest) {
     return copyCookies(supabaseResponse, NextResponse.redirect(login));
   }
 
+  const refreshed = await signAdminToken(session);
+  supabaseResponse.cookies.set(
+    ADMIN_COOKIE,
+    refreshed,
+    sessionCookieOptions()
+  );
   return supabaseResponse;
 }
 

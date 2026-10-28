@@ -1,3 +1,4 @@
+import { isDemoStudentAccount } from "@/lib/demo-accounts";
 import {
   NEW_PASSWORD_MAX,
   NEW_PASSWORD_MIN,
@@ -16,10 +17,25 @@ import {
 } from "@/lib/security/lockout";
 import { setPendingMfaCookie } from "@/lib/security/pending";
 import {
-  getSupabaseAdmin,
+  getSupabaseAuthAdmin,
+  hasSupabaseSecret,
   isSupabaseConfigured,
   usernameFromEmail,
 } from "@/lib/supabase/config";
+
+function signupErrorMessage(message: string) {
+  const lower = message.toLowerCase();
+  if (lower.includes("already") || lower.includes("registered") || lower.includes("exists")) {
+    return "That email is already registered. Sign in, or use forgot password.";
+  }
+  if (lower.includes("password")) {
+    return "Choose a stronger password of at least 12 characters.";
+  }
+  if (lower.includes("email")) {
+    return "Check the student email and try again.";
+  }
+  return "Could not create that account. Try a different student email.";
+}
 
 export async function POST(request: Request) {
   const originError = requireTrustedOrigin(request);
@@ -55,50 +71,53 @@ export async function POST(request: Request) {
     return jsonError("Check your details.", 400);
   }
 
-  if (!isSupabaseConfigured()) {
+  if (isDemoStudentAccount(username)) {
+    recordLoginFailure(key);
+    return jsonError(
+      "That student ID is a shared demo account. Sign in with it, or use your own student email.",
+      400
+    );
+  }
+
+  if (!isSupabaseConfigured() || !hasSupabaseSecret()) {
     recordLoginFailure(key);
     return jsonError("Account creation is not available.", 503);
   }
 
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAuthAdmin();
   if (!supabase) {
     recordLoginFailure(key);
     return jsonError("Account creation is not available.", 503);
   }
 
-  const created =
-    process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? await supabase.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: {
-            portal: "student",
-            role: "student",
-            username,
-            display_name: name,
-          },
-        })
-      : await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              portal: "student",
-              role: "student",
-              username,
-              display_name: name,
-            },
-          },
-        });
+  const createWithUsername = (account: string) =>
+    supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        portal: "student",
+        role: "student",
+        username: account,
+        display_name: name,
+      },
+    });
+
+  let created = await createWithUsername(username);
+  if (created.error && /database error/i.test(created.error.message)) {
+    created = await createWithUsername(
+      `${username}-${crypto.randomUUID().slice(0, 8)}`
+    );
+  }
 
   const { data, error } = created;
   if (error || !data.user) {
     recordLoginFailure(key);
-    return jsonError("Could not create that account.", 400);
+    console.error("Student signup failed:", error?.message);
+    return jsonError(signupErrorMessage(error?.message || ""), 400);
   }
 
-  await supabase.from("profiles").upsert({
+  const { error: profileError } = await supabase.from("profiles").upsert({
     id: data.user.id,
     username,
     display_name: name,
@@ -106,6 +125,16 @@ export async function POST(request: Request) {
     portal: "student",
     role: "student",
   });
+  if (profileError) {
+    await supabase.from("profiles").upsert({
+      id: data.user.id,
+      username: `${username}-${data.user.id.slice(0, 6)}`,
+      display_name: name,
+      email,
+      portal: "student",
+      role: "student",
+    });
+  }
 
   clearLoginFailures(key);
   await setPendingMfaCookie(username);
@@ -114,5 +143,6 @@ export async function POST(request: Request) {
     username,
     name,
     email,
+    mfaRequired: true,
   });
 }

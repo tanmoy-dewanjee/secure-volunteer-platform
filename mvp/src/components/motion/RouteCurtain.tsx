@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+
+import { consumeLoginWave } from "@/lib/login-wave";
 
 function Wave({
   className,
@@ -30,14 +32,10 @@ export default function RouteCurtain({
   kicker?: string;
 }) {
   const pathname = usePathname();
-  const first = useRef(true);
   const [phase, setPhase] = useState<"idle" | "cover" | "reveal">("idle");
 
   useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+    if (!consumeLoginWave()) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
     }

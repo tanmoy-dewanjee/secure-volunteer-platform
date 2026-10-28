@@ -1,3 +1,4 @@
+import { isDemoStudentAccount } from "@/lib/demo-accounts";
 import {
   jsonError,
   jsonOk,
@@ -6,7 +7,6 @@ import {
 import {
   clientKey,
   loginBlocked,
-  recordLoginFailure,
 } from "@/lib/security/lockout";
 import {
   getSupabaseAdmin,
@@ -20,14 +20,23 @@ function allowedOrigin(request: Request) {
   const origin = request.headers.get("origin") || "";
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
   const allowed = new Set(
-    [configured, "http://localhost:3000", "http://127.0.0.1:3000"].filter(
-      Boolean
-    ) as string[]
+    [
+      configured,
+      "https://auvolunteers.online",
+      "https://www.auvolunteers.online",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+    ].filter(Boolean) as string[]
   );
+  try {
+    allowed.add(new URL(request.url).origin);
+  } catch {
+    /* ignore */
+  }
   if (origin && allowed.has(origin.replace(/\/$/, ""))) {
     return origin.replace(/\/$/, "");
   }
-  return configured || "http://localhost:3000";
+  return configured || "https://auvolunteers.online";
 }
 
 export async function POST(request: Request) {
@@ -50,10 +59,18 @@ export async function POST(request: Request) {
   const looksLikeId = /^a\d{7}$/i.test(username);
   const looksLikeEmail = username.includes("@");
   if (!username || (!looksLikeId && !looksLikeEmail)) {
-    recordLoginFailure(key);
     return jsonOk({
       ok: true,
       message: "If an account exists, a reset email will be sent.",
+    });
+  }
+
+  if (isDemoStudentAccount(username)) {
+    return jsonOk({
+      ok: true,
+      demo: true,
+      message:
+        "Demo accounts use the published demo password. Sign in with a1991246 and Volunteer1!.",
     });
   }
 
@@ -64,9 +81,9 @@ export async function POST(request: Request) {
     });
   }
 
-  const mapped = studentEmailsForUsername(username);
-  const supabase = getSupabaseAdmin() ?? getSupabaseAnon();
-  if (!supabase) {
+  const admin = getSupabaseAdmin();
+  const mailer = getSupabaseAnon();
+  if (!mailer) {
     return jsonOk({
       ok: true,
       message: "If an account exists, a reset email will be sent.",
@@ -74,35 +91,44 @@ export async function POST(request: Request) {
   }
 
   const localId = looksLikeEmail ? usernameFromEmail(username) : username;
-  const byUsername = await supabase
-    .from("profiles")
-    .select("email, portal")
-    .eq("username", localId)
-    .maybeSingle();
-  let profile = byUsername.data;
-  if (!profile && looksLikeEmail) {
-    const byEmail = await supabase
+  let profileEmail = "";
+  if (admin) {
+    const byUsername = await admin
       .from("profiles")
       .select("email, portal")
-      .eq("email", username)
+      .eq("username", localId)
       .maybeSingle();
-    profile = byEmail.data;
+    let profile = byUsername.data;
+    if (!profile && looksLikeEmail) {
+      const byEmail = await admin
+        .from("profiles")
+        .select("email, portal")
+        .eq("email", username)
+        .maybeSingle();
+      profile = byEmail.data;
+    }
+    if (profile?.portal === "admin") {
+      return jsonOk({
+        ok: true,
+        message: "If an account exists, a reset email will be sent.",
+      });
+    }
+    profileEmail = profile?.email ? String(profile.email).toLowerCase() : "";
   }
 
-  if (profile?.portal === "admin") {
-    return jsonOk({
-      ok: true,
-      message: "If an account exists, a reset email will be sent.",
-    });
-  }
-
-  const emails = new Set(mapped);
-  const profileEmail = profile?.email ? String(profile.email).toLowerCase() : "";
+  const emails = new Set<string>();
   if (profileEmail) emails.add(profileEmail);
+  else if (looksLikeEmail) emails.add(username);
+  else studentEmailsForUsername(username).forEach((email) => emails.add(email));
 
   const redirectTo = `${allowedOrigin(request)}/auth/callback?next=/reset-password`;
   for (const email of emails) {
-    await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    const { error } = await mailer.auth.resetPasswordForEmail(email, {
+      redirectTo,
+    });
+    if (error) {
+      console.error("Password reset email failed:", error.message);
+    }
   }
 
   return jsonOk({

@@ -12,8 +12,8 @@ export function supabaseCookieOptions() {
   return {
     name: SUPABASE_COOKIE,
     path: "/",
-    httpOnly: true,
     sameSite: "lax" as const,
+    maxAge: 60 * 60 * 24 * 7,
     secure:
       process.env.COOKIE_SECURE === "true" ||
       process.env.NODE_ENV === "production",

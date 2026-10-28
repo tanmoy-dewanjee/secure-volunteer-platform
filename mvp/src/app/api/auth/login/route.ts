@@ -1,3 +1,4 @@
+import { isDemoStudentAccount } from "@/lib/demo-accounts";
 import {
   GENERIC_AUTH_ERROR,
 } from "@/lib/security/constants";
@@ -77,7 +78,10 @@ export async function POST(request: Request) {
 
     clearLoginFailures(key);
     const account = profile?.username || usernameFromEmail(email);
-    await setPendingMfaCookie(account);
+    const demo = isDemoStudentAccount(account);
+    if (!demo) {
+      await setPendingMfaCookie(account);
+    }
     const mfa = (
       profile?.profile_data as
         | { mfa?: { enabled?: boolean; secret?: string } }
@@ -87,7 +91,8 @@ export async function POST(request: Request) {
       source: "supabase",
       username: account,
       name: profile?.display_name || usernameFromEmail(email),
-      mfaEnabled: Boolean(mfa?.enabled && mfa?.secret),
+      mfaRequired: !demo,
+      mfaEnabled: demo ? false : Boolean(mfa?.enabled && mfa?.secret),
     });
   }
 

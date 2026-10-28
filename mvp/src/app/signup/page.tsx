@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import DemoBanner from "@/components/DemoBanner";
+import { markLoginWave } from "@/lib/login-wave";
 import { signIn } from "@/lib/session";
 import { signInStudentSession } from "@/utils/supabase/session";
 
@@ -261,8 +262,9 @@ export default function SignupPage() {
         signIn({
             username,
             name: name.trim(),
-            keepSignedIn: false,
+            keepSignedIn: true,
         });
+        markLoginWave();
         router.push("/profile");
     };
 

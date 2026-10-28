@@ -34,7 +34,10 @@ function cookieSecure() {
   );
 }
 
-export async function signAdminToken(payload: AdminToken, minutes = 15) {
+export async function signAdminToken(
+  payload: AdminToken,
+  minutes = Math.floor(ADMIN_IDLE_MS / 60_000)
+) {
   return new SignJWT({
     username: payload.username,
     role: payload.role,
