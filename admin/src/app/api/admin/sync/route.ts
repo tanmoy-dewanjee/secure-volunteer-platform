@@ -11,7 +11,6 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   announcementToRow,
   applicationToRow,
-  auditToRow,
   eventToRow,
   swapToRow,
   volunteerToRow,
@@ -68,12 +67,12 @@ export async function POST(request: Request) {
     )
   );
   await supabase.from("volunteer_directory").upsert(ops.volunteers.map(volunteerToRow));
-  await supabase.from("audit_logs").upsert(ops.audit.map(auditToRow));
+  // audit_logs are append-only; seed migration already inserts demo rows (D1).
   await supabase.from("announcements").upsert(ops.announcements.map(announcementToRow));
   await supabase.from("shift_swaps").upsert(ops.swaps.map(swapToRow));
 
   for (const account of adminAccounts) {
-    await supabase.auth.admin.createUser({
+    const created = await supabase.auth.admin.createUser({
       email: account.email,
       password: DEMO_ADMIN_PASSWORD,
       email_confirm: true,
@@ -84,9 +83,21 @@ export async function POST(request: Request) {
         display_name: account.displayName,
       },
     });
+    // handle_new_user hardcodes student; elevate admin profiles explicitly (D2).
+    const userId = created.data.user?.id;
+    if (userId) {
+      await supabase.from("profiles").upsert({
+        id: userId,
+        username: account.username,
+        display_name: account.displayName,
+        email: account.email,
+        portal: "admin",
+        role: account.role,
+      });
+    }
   }
 
-  await supabase.auth.admin.createUser({
+  const demoStudent = await supabase.auth.admin.createUser({
     email: "a1991246@adelaide.edu.au",
     password: "Volunteer1!",
     email_confirm: true,
@@ -97,6 +108,16 @@ export async function POST(request: Request) {
       display_name: "Alex Volunteer",
     },
   });
+  if (demoStudent.data.user?.id) {
+    await supabase.from("profiles").upsert({
+      id: demoStudent.data.user.id,
+      username: "a1991246",
+      display_name: "Alex Volunteer",
+      email: "a1991246@adelaide.edu.au",
+      portal: "student",
+      role: "student",
+    });
+  }
 
   return NextResponse.json({
     ok: true,

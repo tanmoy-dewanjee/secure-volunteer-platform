@@ -8,7 +8,6 @@ import {
   applicationFromRow,
   applicationToRow,
   auditFromRow,
-  auditToRow,
   swapFromRow,
   swapToRow,
   volunteerFromRow,
@@ -225,9 +224,7 @@ async function seedOps(ops: OpsState) {
   if (ops.volunteers.length) {
     await supabase.from("volunteer_directory").upsert(ops.volunteers.map(volunteerToRow));
   }
-  if (ops.audit.length) {
-    await supabase.from("audit_logs").upsert(ops.audit.map(auditToRow));
-  }
+  // audit_logs are append-only server-side; never upsert client-supplied rows (D1).
   if (ops.announcements.length) {
     await supabase.from("announcements").upsert(ops.announcements.map(announcementToRow));
   }

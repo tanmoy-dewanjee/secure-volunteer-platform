@@ -139,20 +139,38 @@ async function getUserClient() {
 async function loadRemoteApplications(username: string) {
   if (!isSupabaseConfigured()) return { source: "local" as const, applications: [] as VolunteerApplication[] };
 
-  const supabase = (await getUserClient()) ?? getSupabaseAdmin();
-  if (!supabase) return { source: "local" as const, applications: [] as VolunteerApplication[] };
+  // Prefer the signed-in user JWT so SECURITY DEFINER RPCs see auth.uid().
+  const userClient = await getUserClient();
+  if (userClient) {
+    const rpc = await userClient.rpc("list_volunteer_applications", {
+      p_username: username,
+    });
+    if (!rpc.error && Array.isArray(rpc.data)) {
+      return {
+        source: "supabase" as const,
+        applications: rpc.data.map((row) =>
+          applicationFromRow(row as Record<string, unknown>)
+        ),
+      };
+    }
 
-  const rpc = await supabase.rpc("list_volunteer_applications", {
-    p_username: username,
-  });
-  if (!rpc.error && Array.isArray(rpc.data)) {
-    return {
-      source: "supabase" as const,
-      applications: rpc.data.map((row) =>
-        applicationFromRow(row as Record<string, unknown>)
-      ),
-    };
+    const { data, error } = await userClient
+      .from("applications")
+      .select("*")
+      .eq("volunteer_username", username)
+      .order("created_at", { ascending: false });
+    if (!error) {
+      return {
+        source: "supabase" as const,
+        applications: (data ?? []).map((row) =>
+          applicationFromRow(row as Record<string, unknown>)
+        ),
+      };
+    }
   }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { source: "local" as const, applications: [] as VolunteerApplication[] };
 
   const { data, error } = await supabase
     .from("applications")
@@ -184,32 +202,42 @@ async function saveRemoteApplication(
     return { source: "local" as const, created: true, application };
   }
 
-  const supabase = getSupabaseAdmin();
-  if (!supabase) {
+  const admin = getSupabaseAdmin();
+  const userClient = await getUserClient();
+  if (!admin && !userClient) {
     return { source: "local" as const, created: true, application };
   }
 
-  await ensureEvent(supabase, application);
-  const row = applicationToRow(username, name, application);
-
-  const rpc = await supabase.rpc("submit_volunteer_application", {
-    payload: row,
+  // Event ensure still needs service role when RLS blocks student inserts.
+  if (admin) {
+    await ensureEvent(admin, application);
+  }
+  const row = applicationToRow(username, name, {
+    ...application,
+    status: "Pending",
   });
-  if (!rpc.error && rpc.data && typeof rpc.data === "object") {
-    const payload = rpc.data as {
-      created?: boolean;
-      application?: Record<string, unknown>;
-    };
-    return {
-      source: "supabase" as const,
-      created: payload.created !== false,
-      application: payload.application
-        ? applicationFromRow(payload.application)
-        : application,
-    };
+
+  if (userClient) {
+    const rpc = await userClient.rpc("submit_volunteer_application", {
+      payload: row,
+    });
+    if (!rpc.error && rpc.data && typeof rpc.data === "object") {
+      const payload = rpc.data as {
+        created?: boolean;
+        application?: Record<string, unknown>;
+      };
+      return {
+        source: "supabase" as const,
+        created: payload.created !== false,
+        application: payload.application
+          ? applicationFromRow(payload.application)
+          : { ...application, status: "Pending" },
+      };
+    }
   }
 
-  const { data: existing } = await supabase
+  const reader = admin ?? userClient!;
+  const { data: existing } = await reader
     .from("applications")
     .select("id, status")
     .eq("volunteer_username", username)
@@ -220,22 +248,25 @@ async function saveRemoteApplication(
     return {
       source: "supabase" as const,
       created: false,
-      application: { ...application, id: String(existing[0].id) },
+      application: { ...application, id: String(existing[0].id), status: "Pending" },
     };
   }
 
-  const userClient = await getUserClient();
-  const writer = userClient ?? supabase;
+  const writer = userClient ?? admin!;
   const { error } = await writer.from("applications").insert(row);
   if (error) {
     return {
       source: "local" as const,
       created: true,
-      application,
+      application: { ...application, status: "Pending" },
     };
   }
 
-  return { source: "supabase" as const, created: true, application };
+  return {
+    source: "supabase" as const,
+    created: true,
+    application: { ...application, status: "Pending" },
+  };
 }
 
 export async function GET(request: Request) {

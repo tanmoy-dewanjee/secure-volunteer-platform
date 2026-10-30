@@ -35,17 +35,26 @@ export async function PATCH(
     return NextResponse.json({ source: "local", ok: true });
   }
 
+  try {
+    const { createClient } = await import("@/utils/supabase/server");
+    const userClient = await createClient();
+    const { data: auth } = await userClient.auth.getUser();
+    if (auth.user) {
+      const rpc = await userClient.rpc("update_application_status", {
+        p_id: id,
+        p_status: "Withdrawn",
+        p_username: username,
+      });
+      if (!rpc.error) {
+        return NextResponse.json({ source: "supabase", ok: true });
+      }
+    }
+  } catch {
+    // Fall through to service-role ownership-scoped update.
+  }
+
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ source: "local", ok: true });
-
-  const rpc = await supabase.rpc("update_application_status", {
-    p_id: id,
-    p_status: "Withdrawn",
-    p_username: username,
-  });
-  if (!rpc.error) {
-    return NextResponse.json({ source: "supabase", ok: true });
-  }
 
   const { error } = await supabase
     .from("applications")
