@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { events as seedEvents } from "@/data/events";
 import { findApplicationConflict } from "@/lib/application-conflicts";
 import type { VolunteerApplication } from "@/lib/applications";
-import { jsonError, requireTrustedOrigin } from "@/lib/security/http";
+import { jsonError, plainText, requireTrustedOrigin } from "@/lib/security/http";
 import { requireStudentUsername } from "@/lib/security/student-session";
 import {
   listSharedApplications,
@@ -346,7 +346,13 @@ export async function POST(request: Request) {
   }
 
   const name = body.name || username;
-  const stored = upsertSharedApplication(toShared(username, name, application));
+  const sanitized: VolunteerApplication = {
+    ...application,
+    motivation: plainText(application.motivation ?? "", 4000),
+    availability: plainText(application.availability ?? "", 400),
+    role: plainText(application.role ?? "", 120),
+  };
+  const stored = upsertSharedApplication(toShared(username, name, sanitized));
   upsertRuntimeVolunteer({
     id: username,
     name,
@@ -354,16 +360,16 @@ export async function POST(request: Request) {
     email: `${username}@adelaide.edu.au`,
     phone: "",
     studentId: username,
-    campus: application.campus,
+    campus: sanitized.campus,
     skills: [],
     hours: 0,
     eventsAttended: 0,
     noShows: 0,
     reliability: 100,
     status: "Active",
-    notes: `Applied for ${application.eventTitle}`,
+    notes: `Applied for ${sanitized.eventTitle}`,
   });
-  const remote = await saveRemoteApplication(username, name, application);
+  const remote = await saveRemoteApplication(username, name, sanitized);
 
   return NextResponse.json({
     source: remote.source,

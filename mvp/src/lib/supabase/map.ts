@@ -185,6 +185,10 @@ export function profileFromRow(
   fallback: StudentProfileData
 ): StudentProfileData {
   const extra = (row.profile_data as Partial<StudentProfileData>) ?? {};
+  const department =
+    typeof extra.department === "string" && extra.department.trim()
+      ? extra.department.trim()
+      : fallback.department;
   return {
     ...fallback,
     ...extra,
@@ -192,6 +196,7 @@ export function profileFromRow(
     studentId: String(row.username || fallback.studentId),
     email: String(row.email || fallback.email),
     campus: String(row.campus || fallback.campus),
+    department,
     bio: String(row.bio || extra.bio || fallback.bio),
     skills: (row.skills as string[]) ?? extra.skills ?? fallback.skills,
     availability: String(row.availability || extra.availability || fallback.availability),

@@ -4,8 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
-import { useSession } from "@/hooks/useSession";
-import { disableMfa, isMfaEnabled } from "@/lib/mfa";
+import { categoryOptions } from "@/data/events";
 import {
   demoStudentProfile,
   getAverageRating,
@@ -17,6 +16,8 @@ import {
   volunteerLevels,
   type StudentProfileData,
 } from "@/data/volunteer-progress";
+import { useSession } from "@/hooks/useSession";
+import { disableMfa, isMfaEnabled } from "@/lib/mfa";
 
 const PROFILE_STORAGE_KEY = "svp_profile_overrides";
 
@@ -99,6 +100,7 @@ export default function StudentProfile() {
     const next = {
       fullName: profile.fullName,
       campus: profile.campus,
+      department: profile.department || "",
       bio: profile.bio,
       skills: profile.skills,
       availability: profile.availability,
@@ -293,6 +295,32 @@ export default function StudentProfile() {
                 }
                 className="mt-2 w-full border border-gray-300 px-4 py-3 outline-none focus:border-purple-700 focus:ring-2 focus:ring-purple-100"
               />
+            </div>
+            <div>
+              <label htmlFor="department" className="block text-sm font-semibold">
+                Preferred area
+              </label>
+              <select
+                id="department"
+                value={profile.department || ""}
+                onChange={(event) =>
+                  setProfile((current) => ({
+                    ...current,
+                    department: event.target.value,
+                  }))
+                }
+                className="mt-2 w-full border border-gray-300 bg-white px-4 py-3 outline-none focus:border-purple-700 focus:ring-2 focus:ring-purple-100"
+              >
+                <option value="">Any / not set</option>
+                {categoryOptions.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-2 text-sm text-gray-500">
+                Used to rank similar events (matches event category).
+              </p>
             </div>
             <div>
               <label htmlFor="bio" className="block text-sm font-semibold">

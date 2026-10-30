@@ -96,6 +96,8 @@ export type StudentProfileData = {
   studentId: string;
   email: string;
   campus: string;
+  /** Optional interest area; affinity matches event.category (Must factor d). */
+  department?: string;
   bio: string;
   skills: string[];
   availability: string;
@@ -114,6 +116,7 @@ export const demoStudentProfile: StudentProfileData = {
   studentId: "a1991246",
   email: "a1991246@adelaide.edu.au",
   campus: "Adelaide City",
+  department: "STEM",
   bio: "Engineering student who likes visitor-facing roles, STEM showcases and practical community builds.",
   skills: ["Welcome desk", "Crowd flow", "First aid awareness"],
   availability: "Weekday afternoons and most Saturdays.",

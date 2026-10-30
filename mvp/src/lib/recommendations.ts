@@ -8,6 +8,13 @@ export type RecommendationRow = {
   events: Event[];
 };
 
+/** Logged-in volunteer signals for Must factors (c) location and (d) department. */
+export type VolunteerHints = {
+  campus?: string;
+  /** Affinity target — matches event.category (product “department”). */
+  department?: string;
+};
+
 function recencyWeight(index: number) {
   return Math.max(0.25, 1 - index * 0.12);
 }
@@ -34,6 +41,19 @@ function scoreCandidate(candidate: Event, viewed: Event[]) {
   });
 
   return score;
+}
+
+function applyVolunteerHints(score: number, candidate: Event, hints?: VolunteerHints) {
+  let next = score;
+  const campus = hints?.campus?.trim();
+  if (campus && candidate.campus === campus) {
+    next += 4;
+  }
+  const department = hints?.department?.trim();
+  if (department && candidate.category === department) {
+    next += 4.5;
+  }
+  return next;
 }
 
 export function buildBrowseRows(
@@ -188,12 +208,21 @@ export function getRecommendedEvents(
     .map((entry) => entry.event);
 }
 
-export function getSimilarEvents(event: Event, allEvents: Event[], limit = 8) {
+export function getSimilarEvents(
+  event: Event,
+  allEvents: Event[],
+  volunteerHints?: VolunteerHints,
+  limit = 8
+) {
   return allEvents
     .filter((candidate) => candidate.id !== event.id)
     .map((candidate) => ({
       event: candidate,
-      score: scoreCandidate(candidate, [event]),
+      score: applyVolunteerHints(
+        scoreCandidate(candidate, [event]),
+        candidate,
+        volunteerHints
+      ),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

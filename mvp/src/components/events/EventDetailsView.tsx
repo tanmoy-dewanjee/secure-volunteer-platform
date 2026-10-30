@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 import EventGrid from "@/components/browse/EventGrid";
 import EventViewTracker from "@/components/EventViewTracker";
@@ -15,15 +16,48 @@ import {
   getEventHost,
   getEventHostLabel,
 } from "@/data/events";
+import type { StudentProfileData } from "@/data/volunteer-progress";
 import { useCatalogEvent, useEventCatalog } from "@/hooks/useEventCatalog";
+import { useSession } from "@/hooks/useSession";
 import { useStudentApplications } from "@/hooks/useStudentApplications";
 import { findApplicationConflict } from "@/lib/application-conflicts";
-import { getSimilarEvents } from "@/lib/recommendations";
+import {
+  getSimilarEvents,
+  type VolunteerHints,
+} from "@/lib/recommendations";
 
 export default function EventDetailsView({ eventId }: { eventId: string }) {
   const { event, ready } = useCatalogEvent(eventId);
   const { events } = useEventCatalog();
   const { applications } = useStudentApplications();
+  const { session, signedIn } = useSession();
+  const [volunteerHints, setVolunteerHints] = useState<VolunteerHints | undefined>();
+
+  useEffect(() => {
+    if (!signedIn || !session?.username) {
+      setVolunteerHints(undefined);
+      return;
+    }
+    let cancelled = false;
+    void fetch(`/api/profile?username=${encodeURIComponent(session.username)}`)
+      .then((response) => response.json())
+      .then((payload: { profile?: StudentProfileData }) => {
+        if (cancelled || !payload.profile) return;
+        setVolunteerHints({
+          campus: payload.profile.campus,
+          department: payload.profile.department,
+        });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [signedIn, session?.username]);
+
+  const similar = useMemo(() => {
+    if (!event) return [];
+    return getSimilarEvents(event, events, volunteerHints);
+  }, [event, events, volunteerHints]);
 
   if (!event && !ready) {
     return (
@@ -39,7 +73,6 @@ export default function EventDetailsView({ eventId }: { eventId: string }) {
   }
 
   const host = getEventHost(event);
-  const similar = getSimilarEvents(event, events);
   const canApply = canApplyToEvent(event);
   const coords = getEventCoordinates(event);
   const inProgress = event.status === "In progress";
@@ -267,7 +300,7 @@ export default function EventDetailsView({ eventId }: { eventId: string }) {
           <EventGrid
             events={similar}
             title="More like this"
-            subtitle="Similar events based on category, campus and host"
+            subtitle="Similar events based on category, campus, host and your profile"
           />
         </div>
       </div>

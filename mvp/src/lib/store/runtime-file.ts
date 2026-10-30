@@ -80,6 +80,7 @@ export function mergeAssignments(
 export type RuntimeProfile = {
   fullName: string;
   campus: string;
+  department?: string;
   bio: string;
   skills: string[];
   availability: string;

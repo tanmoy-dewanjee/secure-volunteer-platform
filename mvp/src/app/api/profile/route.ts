@@ -71,6 +71,7 @@ export async function PUT(request: Request) {
     profile?: {
       fullName: string;
       campus: string;
+      department?: string;
       bio: string;
       skills: string[];
       availability: string;
@@ -91,10 +92,12 @@ export async function PUT(request: Request) {
     return jsonError("username and profile are required.", 400);
   }
 
+  const department = plainText(body.profile.department ?? "", 80);
   const profile = {
     ...body.profile,
     fullName: plainText(body.profile.fullName, 120),
     campus: plainText(body.profile.campus, 80),
+    department: department || undefined,
     bio: plainText(body.profile.bio, 2000),
     availability: plainText(body.profile.availability, 400),
     emergencyContact: plainText(body.profile.emergencyContact, 200),
@@ -113,6 +116,17 @@ export async function PUT(request: Request) {
   const supabase = getSupabaseAdmin();
   if (!supabase) return NextResponse.json({ source: "local", ok: true });
 
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("profile_data")
+    .eq("username", username)
+    .maybeSingle();
+
+  const currentData =
+    existing?.profile_data && typeof existing.profile_data === "object"
+      ? (existing.profile_data as Record<string, unknown>)
+      : {};
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -123,6 +137,10 @@ export async function PUT(request: Request) {
       availability: profile.availability,
       emergency_contact: profile.emergencyContact,
       accessibility: profile.accessibility,
+      profile_data: {
+        ...currentData,
+        department: profile.department || "",
+      },
     })
     .eq("username", username);
 
