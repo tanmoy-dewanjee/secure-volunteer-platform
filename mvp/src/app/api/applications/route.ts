@@ -330,6 +330,18 @@ export async function POST(request: Request) {
   const originError = requireTrustedOrigin(request);
   if (originError) return originError;
 
+  try {
+    return await submitApplication(request);
+  } catch (error) {
+    console.error(
+      "Application submit failed:",
+      error instanceof Error ? error.message : "unknown"
+    );
+    return jsonError("Your application could not be saved. Please try again.", 500);
+  }
+}
+
+async function submitApplication(request: Request) {
   let body: {
     username?: string;
     name?: string;
@@ -427,11 +439,11 @@ export async function POST(request: Request) {
       "Application remote save failed:",
       error instanceof Error ? error.message : "unknown"
     );
-    remote = {
-      source: "local",
-      created: true,
-      application: { ...sanitized, status: "Pending" },
-    };
+    return jsonError("Your application could not be saved. Please try again.", 503);
+  }
+
+  if (isSupabaseConfigured() && remote.source !== "supabase") {
+    return jsonError("Your application could not be saved. Please try again.", 503);
   }
 
   return NextResponse.json({

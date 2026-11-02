@@ -114,6 +114,7 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
   const [submitted, setSubmitted] = useState(false);
   const [alreadyApplied, setAlreadyApplied] = useState(false);
   const [conflictMessage, setConflictMessage] = useState("");
+  const [submitError, setSubmitError] = useState("");
 
   const selectedShifts = event.shifts.filter((shift) => shiftIds.includes(shift.id));
   const existingConflict = appsReady
@@ -180,6 +181,7 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
         : id;
     });
 
+    setSubmitError("");
     const result = await persistApplication(
       session.username,
       session.name || session.username,
@@ -197,6 +199,11 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
       catalog.length ? catalog : [event],
       selectedShifts
     );
+
+    if ("error" in result && result.error) {
+      setSubmitError(result.error);
+      return;
+    }
 
     if (result.conflict) {
       setAlreadyApplied(result.conflict.kind === "same-event");
@@ -539,6 +546,12 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
           educational demonstration. *
         </label>
       </div>
+
+      {submitError ? (
+        <p role="alert" className="border border-red-200 bg-red-50 p-4 text-sm font-medium leading-6 text-red-800">
+          {submitError}
+        </p>
+      ) : null}
 
       <button
         type="submit"

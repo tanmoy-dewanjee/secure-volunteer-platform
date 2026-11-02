@@ -177,6 +177,18 @@ export async function fetchApplications(username: string) {
   return local;
 }
 
+function submitFailure(
+  application: VolunteerApplication,
+  message: string
+) {
+  return {
+    application,
+    created: false as const,
+    conflict: null,
+    error: message,
+  };
+}
+
 export async function persistApplication(
   username: string,
   name: string,
@@ -184,10 +196,40 @@ export async function persistApplication(
   catalog: Event[] = [],
   selectedShifts?: VolunteerShift[]
 ) {
-  const result = addApplication(username, application, catalog, selectedShifts);
-  if (!result.created) {
-    return result;
+  const current = getApplications(username);
+  const candidate = catalog.find((item) => item.id === application.eventId) ?? {
+    id: application.eventId,
+    title: application.eventTitle,
+    date: application.eventDate,
+    startTime: "12:00 AM",
+    endTime: "11:59 PM",
+    shifts: [],
+  };
+  const conflict = findApplicationConflict(
+    current,
+    candidate,
+    catalog,
+    selectedShifts
+  );
+  if (conflict) {
+    return {
+      application: conflict.application,
+      created: false as const,
+      conflict,
+    };
   }
+
+  const next: VolunteerApplication = {
+    ...application,
+    id: `app-${Date.now()}`,
+    submittedDate: new Date().toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }),
+    status: "Pending",
+  };
+
   try {
     const response = await fetch("/api/applications", {
       method: "POST",
@@ -196,44 +238,59 @@ export async function persistApplication(
       body: JSON.stringify({
         username,
         name,
-        application: result.application,
+        application: next,
         selectedShiftIds: selectedShifts?.map((shift) => shift.id) ?? [],
       }),
     });
-    const payload = (await response.json()) as {
+    let payload: {
       created?: boolean;
       application?: VolunteerApplication;
       conflict?: ApplicationConflict;
       error?: string;
-    };
+    } = {};
+    try {
+      payload = (await response.json()) as typeof payload;
+    } catch {
+      payload = {};
+    }
+
     if (response.status === 409 || payload.conflict) {
-      saveApplications(
-        username,
-        getApplications(username).filter((item) => item.id !== result.application.id)
-      );
       return {
-        application: payload.conflict?.application ?? result.application,
-        created: false,
-        conflict: payload.conflict ?? result.conflict,
+        application: payload.conflict?.application ?? next,
+        created: false as const,
+        conflict: payload.conflict ?? null,
       };
     }
-    if (response.ok && payload.application && isApplication(payload.application)) {
-      const current = getApplications(username).filter(
-        (item) =>
-          item.id !== result.application.id &&
-          item.id !== payload.application?.id
+
+    if (!response.ok) {
+      return submitFailure(
+        next,
+        payload.error || "Something went wrong. Please try again."
       );
-      saveApplications(username, [payload.application, ...current]);
+    }
+
+    if (payload.application && isApplication(payload.application)) {
+      const stored = getApplications(username).filter(
+        (item) => item.id !== next.id && item.id !== payload.application?.id
+      );
+      saveApplications(username, [payload.application, ...stored]);
       return {
         application: payload.application,
-        created: payload.created !== false && result.created,
+        created: payload.created !== false,
         conflict: null,
       };
     }
+
+    return submitFailure(
+      next,
+      payload.error || "Something went wrong. Please try again."
+    );
   } catch {
-    // Already stored locally.
+    return submitFailure(
+      next,
+      "Could not reach the server. Please try again."
+    );
   }
-  return result;
 }
 
 export async function persistWithdraw(username: string, id: string) {
