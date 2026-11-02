@@ -15,8 +15,9 @@ import {
 } from "@/lib/security/lockout";
 import { setPendingMfaCookie } from "@/lib/security/pending";
 import {
+  adminCreateUser,
+  getSupabaseAnon,
   getSupabaseAuthAdmin,
-  hasSupabaseSecret,
   isSupabaseConfigured,
   usernameFromEmail,
 } from "@/lib/supabase/config";
@@ -110,35 +111,48 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isSupabaseConfigured() || !hasSupabaseSecret()) {
+  if (!isSupabaseConfigured()) {
     return jsonError("Account creation is not available.", 503);
   }
 
-  const supabase = getSupabaseAuthAdmin();
+  const supabase = getSupabaseAuthAdmin() ?? getSupabaseAnon();
   if (!supabase) {
     return jsonError("Account creation is not available.", 503);
   }
 
   const account = await availableUsername(supabase, username);
+  const metadata = {
+    portal: "student",
+    role: "student",
+    username: account,
+    display_name: name,
+  };
 
-  const createWithUsername = (nextUsername: string) =>
-    supabase.auth.admin.createUser({
+  let created = await adminCreateUser({
+    email,
+    password,
+    metadata,
+  });
+  if (created.error && /database error/i.test(created.error.message || "")) {
+    created = await adminCreateUser({
       email,
       password,
-      email_confirm: true,
-      user_metadata: {
-        portal: "student",
-        role: "student",
-        username: nextUsername,
-        display_name: name,
+      metadata: {
+        ...metadata,
+        username: `${username}-${crypto.randomUUID().slice(0, 8)}`,
       },
     });
+  }
 
-  let created = await createWithUsername(account);
-  if (created.error && /database error/i.test(created.error.message)) {
-    created = await createWithUsername(
-      `${username}-${crypto.randomUUID().slice(0, 8)}`
-    );
+  if ((created.error || !created.data.user) && getSupabaseAnon()) {
+    const signed = await getSupabaseAnon()!.auth.signUp({
+      email,
+      password,
+      options: { data: metadata },
+    });
+    if (!signed.error && signed.data.user) {
+      created = signed;
+    }
   }
 
   const { data, error } = created;
