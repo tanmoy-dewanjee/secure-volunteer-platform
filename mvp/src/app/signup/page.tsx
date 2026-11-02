@@ -239,6 +239,7 @@ export default function SignupPage() {
             });
             const payload = (await response.json()) as {
                 source?: string;
+                username?: string;
                 error?: string;
             };
             if (!response.ok) {
@@ -249,6 +250,9 @@ export default function SignupPage() {
                 );
                 return;
             }
+            setUsername(
+                payload.username || usernameFromSignupEmail(email)
+            );
         } catch {
             openPopup(
                 "Could not create account",
@@ -256,9 +260,6 @@ export default function SignupPage() {
             );
             return;
         }
-
-        const nextUsername = usernameFromSignupEmail(email);
-        setUsername(nextUsername);
         setStep("enroll");
     };
 

@@ -20,6 +20,7 @@ import {
   isSupabaseConfigured,
   usernameFromEmail,
 } from "@/lib/supabase/config";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 function signupErrorMessage(message: string) {
   const lower = message.toLowerCase();
@@ -29,10 +30,43 @@ function signupErrorMessage(message: string) {
   if (lower.includes("password")) {
     return "Choose a stronger password that meets the listed requirements.";
   }
+  if (lower.includes("database")) {
+    return "That student ID is already in use. Try your a-number email such as a1234567@adelaide.edu.au.";
+  }
   if (lower.includes("email")) {
     return "Check the student email and try again.";
   }
+  if (
+    lower.includes("api key") ||
+    lower.includes("not allowed") ||
+    lower.includes("unauthorized") ||
+    lower.includes("forbidden")
+  ) {
+    return "Account creation is not available.";
+  }
   return "Could not create that account. Try a different student email.";
+}
+
+async function availableUsername(supabase: SupabaseClient, base: string) {
+  const root = base.slice(0, 24);
+  const { data } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("username", root)
+    .maybeSingle();
+  if (!data) return root;
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const candidate = `${root}-${crypto.randomUUID().slice(0, 8)}`;
+    const { data: taken } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("username", candidate)
+      .maybeSingle();
+    if (!taken) return candidate;
+  }
+
+  return `${root}-${Date.now().toString(36)}`;
 }
 
 export async function POST(request: Request) {
@@ -85,7 +119,9 @@ export async function POST(request: Request) {
     return jsonError("Account creation is not available.", 503);
   }
 
-  const createWithUsername = (account: string) =>
+  const account = await availableUsername(supabase, username);
+
+  const createWithUsername = (nextUsername: string) =>
     supabase.auth.admin.createUser({
       email,
       password,
@@ -93,12 +129,12 @@ export async function POST(request: Request) {
       user_metadata: {
         portal: "student",
         role: "student",
-        username: account,
+        username: nextUsername,
         display_name: name,
       },
     });
 
-  let created = await createWithUsername(username);
+  let created = await createWithUsername(account);
   if (created.error && /database error/i.test(created.error.message)) {
     created = await createWithUsername(
       `${username}-${crypto.randomUUID().slice(0, 8)}`
@@ -115,18 +151,20 @@ export async function POST(request: Request) {
     );
   }
 
+  let profileUsername = account;
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: data.user.id,
-    username,
+    username: profileUsername,
     display_name: name,
     email,
     portal: "student",
     role: "student",
   });
   if (profileError) {
+    profileUsername = `${username}-${data.user.id.slice(0, 6)}`;
     await supabase.from("profiles").upsert({
       id: data.user.id,
-      username: `${username}-${data.user.id.slice(0, 6)}`,
+      username: profileUsername,
       display_name: name,
       email,
       portal: "student",
@@ -136,13 +174,13 @@ export async function POST(request: Request) {
 
   clearLoginFailures(key);
   try {
-    await setPendingMfaCookie(username);
+    await setPendingMfaCookie(profileUsername);
   } catch {
     /* Signup still succeeds if the pending-MFA cookie cannot be signed. */
   }
   return jsonOk({
     source: "supabase",
-    username,
+    username: profileUsername,
     name,
     email,
     mfaRequired: true,
