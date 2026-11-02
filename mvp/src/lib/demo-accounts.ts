@@ -1,5 +1,11 @@
 export const DEMO_STUDENT_PASSWORD = "Volunteer1!";
 export const DEMO_STUDENT_USERNAME = "a1991246";
+export const DEMO_STUDENT_USERNAME_TWO = "a1882201";
+
+export const DEMO_STUDENT_ACCOUNTS = [
+  { username: "a1991246", name: "Alex Nguyen" },
+  { username: "a1882201", name: "Priya Shah" },
+] as const;
 
 export const DEMO_STUDENT_USERNAMES = [
   "a1991246",

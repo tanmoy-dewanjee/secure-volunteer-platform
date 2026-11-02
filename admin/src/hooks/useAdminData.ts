@@ -69,9 +69,18 @@ export function useAdminData() {
     };
 
     void hydrate();
+    const onFocus = () => {
+      void hydrate();
+    };
+    const poll = window.setInterval(() => {
+      void hydrate();
+    }, 15000);
+    window.addEventListener("focus", onFocus);
     window.addEventListener(ADMIN_EVENTS_EVENT, refreshEvents);
     window.addEventListener(ADMIN_OPS_EVENT, refreshOps);
     return () => {
+      window.clearInterval(poll);
+      window.removeEventListener("focus", onFocus);
       window.removeEventListener(ADMIN_EVENTS_EVENT, refreshEvents);
       window.removeEventListener(ADMIN_OPS_EVENT, refreshOps);
     };

@@ -35,55 +35,61 @@ export default function AdminLoginForm() {
     event.preventDefault();
     setBusy(true);
     setError("");
-    const response = await fetch("/api/admin/auth/login", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password }),
-    });
-    const data = (await response.json()) as {
-      error?: string;
-      enrolled?: boolean;
-      enrollment?: Enrollment;
-      mfaRequired?: boolean;
-    };
-    setBusy(false);
-    if (!response.ok) {
-      setError(data.error || "Sign-in details were not recognised.");
-      return;
-    }
-    if (data.mfaRequired === false) {
-      const established = await signInAdminSession(username, password);
-      if (!established) {
-        setError("Could not establish a secure session. Try again.");
+    try {
+      const response = await fetch("/api/admin/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
+      });
+      const data = (await response.json()) as {
+        error?: string;
+        enrolled?: boolean;
+        enrollment?: Enrollment;
+        mfaRequired?: boolean;
+      };
+      if (!response.ok) {
+        setError(data.error || "Sign-in details were not recognised.");
         return;
       }
-      markLoginWave();
-      finish();
-      return;
+      if (data.mfaRequired === false) {
+        void signInAdminSession(username, password);
+        markLoginWave();
+        finish();
+        return;
+      }
+      setEnrollment(data.enrolled ? null : data.enrollment ?? null);
+      setStep("mfa");
+    } catch {
+      setError("Sign-in details were not recognised.");
+    } finally {
+      setBusy(false);
     }
-    setEnrollment(data.enrolled ? null : data.enrollment ?? null);
-    setStep("mfa");
   };
 
   const handleMfa = async (event: FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setError("");
-    const response = await fetch("/api/admin/auth/mfa", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ code }),
-    });
-    const data = (await response.json()) as { error?: string };
-    setBusy(false);
-    if (!response.ok) {
-      setError(data.error || "That code is not valid.");
-      return;
+    try {
+      const response = await fetch("/api/admin/auth/mfa", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ code }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(data.error || "That code is not valid.");
+        return;
+      }
+      void signInAdminSession(username, password);
+      finish();
+    } catch {
+      setError("That code is not valid.");
+    } finally {
+      setBusy(false);
     }
-    await signInAdminSession(username, password);
-    finish();
   };
 
   if (step === "mfa") {

@@ -9,8 +9,8 @@ import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
 import { useSession } from "@/hooks/useSession";
 import {
+    DEMO_STUDENT_ACCOUNTS,
     DEMO_STUDENT_PASSWORD,
-    DEMO_STUDENT_USERNAME,
     isDemoStudentAccount,
     isStudentLoginIdentity,
 } from "@/lib/demo-accounts";
@@ -266,7 +266,7 @@ export default function LoginPage() {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    signOut();
+                                    void signOut();
                                 }}
                                 className="mt-4 w-full border border-black px-6 py-3 font-semibold transition hover:bg-[#f3f1ed]"
                             >
@@ -295,7 +295,7 @@ export default function LoginPage() {
                     <p className="mt-4 leading-7 text-gray-600">
                         Enter your university username and password. New
                         student accounts confirm with an authenticator app.
-                        The shared demo account does not.
+                        Shared demo accounts do not.
                     </p>
 
                     <form
@@ -444,13 +444,16 @@ export default function LoginPage() {
 
                     <div className="mt-8 border-l-4 border-[#7C00E8] bg-[#f4ecff] p-4">
                         <p className="font-semibold text-purple-900">
-                            Student demo account
+                            Student demo accounts
                         </p>
                         <p className="mt-1 text-sm leading-6 text-gray-700">
-                            Username <strong>{DEMO_STUDENT_USERNAME}</strong>.
-                            Password <strong>{DEMO_STUDENT_PASSWORD}</strong>.
-                            Demo accounts skip 2FA. New student accounts still
-                            enrol an authenticator app.
+                            Username <strong>{DEMO_STUDENT_ACCOUNTS[0].username}</strong>{" "}
+                            ({DEMO_STUDENT_ACCOUNTS[0].name}) or{" "}
+                            <strong>{DEMO_STUDENT_ACCOUNTS[1].username}</strong>{" "}
+                            ({DEMO_STUDENT_ACCOUNTS[1].name}). Password{" "}
+                            <strong>{DEMO_STUDENT_PASSWORD}</strong>. Demo
+                            accounts skip 2FA. New student accounts still enrol
+                            an authenticator app.
                         </p>
                     </div>
                     </>

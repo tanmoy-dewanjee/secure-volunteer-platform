@@ -29,7 +29,7 @@ import {
 export default function EventDetailsView({ eventId }: { eventId: string }) {
   const { event, ready } = useCatalogEvent(eventId);
   const { events } = useEventCatalog();
-  const { applications } = useStudentApplications();
+  const { applications, ready: appsReady } = useStudentApplications();
   const { session, signedIn } = useSession();
   const [volunteerHints, setVolunteerHints] = useState<VolunteerHints | undefined>();
 
@@ -76,11 +76,13 @@ export default function EventDetailsView({ eventId }: { eventId: string }) {
   const canApply = canApplyToEvent(event);
   const coords = getEventCoordinates(event);
   const inProgress = event.status === "In progress";
-  const applyConflict = findApplicationConflict(
-    applications,
-    event,
-    events.length ? events : [event]
-  );
+  const applyConflict = appsReady
+    ? findApplicationConflict(
+        applications,
+        event,
+        events.length ? events : [event]
+      )
+    : null;
 
   return (
     <main className="min-h-screen bg-white text-[#171717]">
@@ -259,7 +261,11 @@ export default function EventDetailsView({ eventId }: { eventId: string }) {
               </div>
             </dl>
 
-            {canApply && applyConflict ? (
+            {!appsReady ? (
+              <p className="mt-6 border border-gray-200 bg-white px-4 py-3 text-sm text-gray-600">
+                Checking your applications...
+              </p>
+            ) : canApply && applyConflict ? (
               <div className="mt-6 border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-gray-700">
                 <p className="font-semibold">
                   {applyConflict.kind === "same-event"

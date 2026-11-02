@@ -104,7 +104,7 @@ function ExtraField({ field }: { field: ApplicationField }) {
 export default function ApplicationForm({ event }: ApplicationFormProps) {
   const { session } = useSession();
   const { events: catalog } = useEventCatalog();
-  const { applications } = useStudentApplications();
+  const { applications, ready: appsReady } = useStudentApplications();
   const host = getEventHost(event);
   const extraFields = useMemo(() => getApplicationFields(event), [event]);
   const [roleId, setRoleId] = useState("");
@@ -116,12 +116,14 @@ export default function ApplicationForm({ event }: ApplicationFormProps) {
   const [conflictMessage, setConflictMessage] = useState("");
 
   const selectedShifts = event.shifts.filter((shift) => shiftIds.includes(shift.id));
-  const existingConflict = findApplicationConflict(
-    applications,
-    event,
-    catalog.length ? catalog : [event],
-    selectedShifts
-  );
+  const existingConflict = appsReady
+    ? findApplicationConflict(
+        applications,
+        event,
+        catalog.length ? catalog : [event],
+        selectedShifts
+      )
+    : null;
 
   const selectedRole = event.roles.find((role) => role.id === roleId);
   const openShifts = event.shifts.filter((shift) => shift.placesAvailable > 0);

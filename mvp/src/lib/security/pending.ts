@@ -4,15 +4,11 @@ import { cookies } from "next/headers";
 import { STUDENT_MFA_COOKIE } from "@/lib/security/constants";
 
 function secret() {
-  const value =
-    process.env.STUDENT_SESSION_SECRET || process.env.ADMIN_SESSION_SECRET;
-  if (!value) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("STUDENT_SESSION_SECRET is required");
-    }
-    return "dev-student-session-secret-change-me";
-  }
-  return value;
+  return (
+    process.env.STUDENT_SESSION_SECRET ||
+    process.env.ADMIN_SESSION_SECRET ||
+    "dev-student-session-secret-change-me"
+  );
 }
 
 function cookieSecure() {

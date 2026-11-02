@@ -132,10 +132,14 @@ export function touchSession() {
   return next;
 }
 
-export function signOut() {
+export async function signOut() {
   if (!canUseStore()) return;
+  try {
+    await fetch("/api/auth/logout", { method: "POST" });
+  } catch {
+    /* ignore */
+  }
   clearStores();
-  void fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
   window.dispatchEvent(new Event(SESSION_EVENT));
 }
 

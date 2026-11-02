@@ -8,6 +8,7 @@ import {
   requireTrustedOrigin,
 } from "@/lib/security/http";
 import {
+  LOCKOUT_MESSAGE,
   clearLoginFailures,
   clientKey,
   loginBlocked,
@@ -41,17 +42,15 @@ export async function POST(request: Request) {
 
   const key = clientKey(request, username);
   if (loginBlocked(key)) {
-    return jsonError("Too many attempts. Try again in 15 minutes.", 429);
+    return jsonError(LOCKOUT_MESSAGE, 429);
   }
 
   if (!isSupabaseConfigured()) {
-    recordLoginFailure(key);
     return jsonError("Sign-in is not available.", 503);
   }
 
   const supabase = getSupabaseAnon() ?? getSupabaseAdmin();
   if (!supabase) {
-    recordLoginFailure(key);
     return jsonError("Sign-in is not available.", 503);
   }
 
@@ -72,15 +71,19 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (profile?.portal === "admin") {
-      recordLoginFailure(key);
-      return jsonError(GENERIC_AUTH_ERROR, 401);
+      const locked = recordLoginFailure(key);
+      return jsonError(locked ? LOCKOUT_MESSAGE : GENERIC_AUTH_ERROR, locked ? 429 : 401);
     }
 
     clearLoginFailures(key);
     const account = profile?.username || usernameFromEmail(email);
     const demo = isDemoStudentAccount(account);
     if (!demo) {
-      await setPendingMfaCookie(account);
+      try {
+        await setPendingMfaCookie(account);
+      } catch {
+        /* Login still succeeds if the pending-MFA cookie cannot be signed. */
+      }
     }
     const mfa = (
       profile?.profile_data as
@@ -96,6 +99,6 @@ export async function POST(request: Request) {
     });
   }
 
-  recordLoginFailure(key);
-  return jsonError(GENERIC_AUTH_ERROR, 401);
+  const locked = recordLoginFailure(key);
+  return jsonError(locked ? LOCKOUT_MESSAGE : GENERIC_AUTH_ERROR, locked ? 429 : 401);
 }

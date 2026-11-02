@@ -158,7 +158,19 @@ async function ensureUser(
   }
 ) {
   const existing = await findUserId(supabase, input.email);
-  if (existing) return existing;
+  if (existing) {
+    await supabase.auth.admin.updateUserById(existing, {
+      password: input.password,
+      email_confirm: true,
+      user_metadata: {
+        portal: input.portal,
+        role: input.role,
+        username: input.username,
+        display_name: input.displayName,
+      },
+    });
+    return existing;
+  }
   const created = await supabase.auth.admin.createUser({
     id: input.id,
     email: input.email,

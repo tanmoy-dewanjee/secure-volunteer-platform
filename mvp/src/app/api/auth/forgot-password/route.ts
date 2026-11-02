@@ -5,6 +5,7 @@ import {
   requireTrustedOrigin,
 } from "@/lib/security/http";
 import {
+  LOCKOUT_MESSAGE,
   clientKey,
   loginBlocked,
 } from "@/lib/security/lockout";
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
 
   const key = clientKey(request, "forgot");
   if (loginBlocked(key)) {
-    return jsonError("Too many attempts. Try again in 15 minutes.", 429);
+    return jsonError(LOCKOUT_MESSAGE, 429);
   }
 
   let body: { username?: string };

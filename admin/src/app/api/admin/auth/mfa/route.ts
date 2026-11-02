@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
+  LOCKOUT_MESSAGE,
   clearLoginFailures,
   loginBlocked,
   recordLoginFailure,
@@ -37,10 +38,7 @@ export async function POST(request: Request) {
 
   const key = `mfa:${token.username}`;
   if (loginBlocked(key)) {
-    return NextResponse.json(
-      { error: "Too many attempts. Try again in 15 minutes." },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: LOCKOUT_MESSAGE }, { status: 429 });
   }
 
   let parsed: z.infer<typeof bodySchema>;
@@ -52,8 +50,11 @@ export async function POST(request: Request) {
 
   const result = await verifyAdminMfa(token.username, parsed.code);
   if (!result.ok) {
-    recordLoginFailure(key);
-    return NextResponse.json({ error: result.error }, { status: 401 });
+    const locked = recordLoginFailure(key);
+    return NextResponse.json(
+      { error: locked ? LOCKOUT_MESSAGE : result.error },
+      { status: locked ? 429 : 401 }
+    );
   }
 
   clearLoginFailures(key);

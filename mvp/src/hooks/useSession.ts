@@ -49,9 +49,9 @@ export function useSession() {
     session,
     ready,
     signedIn: Boolean(session),
-    signOut: () => {
-      void signOutStudentSession();
-      clearSession();
+    signOut: async () => {
+      await signOutStudentSession();
+      await clearSession();
       setSession(null);
     },
   };

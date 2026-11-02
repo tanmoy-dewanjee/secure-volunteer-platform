@@ -30,7 +30,7 @@ function statusClass(status: ApplicationStatus) {
 
 export default function ApplicationsBoard() {
   const { session } = useSession();
-  const [status, setStatus] = useState<(typeof statusFilters)[number]>("Pending");
+  const [status, setStatus] = useState<(typeof statusFilters)[number]>("All");
   const [applications, setApplications] = useState<VolunteerApplication[]>([]);
 
   useEffect(() => {
@@ -108,7 +108,9 @@ export default function ApplicationsBoard() {
             <div className="border border-gray-200 bg-gray-50 p-10 text-center">
               <h3 className="text-2xl font-semibold">No applications here</h3>
               <p className="mt-3 text-gray-600">
-                Try another status, or apply from Discover.
+                {applications.length === 0
+                  ? "You have not submitted any volunteer applications yet. Apply from Discover."
+                  : "Try another status, or apply from Discover."}
               </p>
             </div>
           ) : (

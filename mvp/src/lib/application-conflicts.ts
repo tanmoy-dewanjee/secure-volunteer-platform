@@ -23,19 +23,45 @@ export type ApplicationConflict = {
   message: string;
 };
 
+const MONTHS: Record<string, number> = {
+  january: 1,
+  february: 2,
+  march: 3,
+  april: 4,
+  may: 5,
+  june: 6,
+  july: 7,
+  august: 8,
+  september: 9,
+  october: 10,
+  november: 11,
+  december: 12,
+};
+
 export function isOpenApplication(application: VolunteerApplication) {
   return OPEN_APPLICATION_STATUSES.includes(
     application.status as (typeof OPEN_APPLICATION_STATUSES)[number]
   );
 }
 
-function dayKey(value: string) {
-  const parsed = Date.parse(value);
-  if (!Number.isNaN(parsed)) {
-    const date = new Date(parsed);
-    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+export function dayKey(value: string | undefined | null): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+
+  const long = raw.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (long) {
+    const month = MONTHS[long[2].toLowerCase()];
+    if (month) return `${Number(long[3])}-${month}-${Number(long[1])}`;
   }
-  return value.trim().toLowerCase();
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (iso) return `${Number(iso[1])}-${Number(iso[2])}-${Number(iso[3])}`;
+
+  const parsed = Date.parse(raw);
+  if (Number.isNaN(parsed)) return `raw:${raw.toLowerCase()}`;
+  const date = new Date(parsed);
+  if (Number.isNaN(date.getTime())) return `raw:${raw.toLowerCase()}`;
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
 }
 
 function minutesFromLabel(value: string) {
@@ -83,7 +109,7 @@ function windowsFromEvent(event: ScheduleEvent, selectedShifts?: VolunteerShift[
     if (fromShifts.length) return fromShifts;
   }
   const whole = windowFromTimes(event.startTime, event.endTime);
-  return whole ? [whole] : [{ start: 0, end: 24 * 60 }];
+  return whole ? [whole] : [];
 }
 
 function windowsFromApplication(
@@ -97,7 +123,7 @@ function windowsFromApplication(
   if (fromShifts.length) return fromShifts;
   const event = catalog.find((item) => item.id === application.eventId);
   if (event) return windowsFromEvent(event);
-  return [{ start: 0, end: 24 * 60 }];
+  return [];
 }
 
 export function findApplicationConflict(
@@ -107,6 +133,8 @@ export function findApplicationConflict(
   selectedShifts?: VolunteerShift[]
 ): ApplicationConflict | null {
   const open = existing.filter(isOpenApplication);
+  if (!open.length) return null;
+
   const sameEvent = open.find((item) => item.eventId === candidate.id);
   if (sameEvent) {
     return {
@@ -119,14 +147,17 @@ export function findApplicationConflict(
 
   const candidateWindows = windowsFromEvent(candidate, selectedShifts);
   const candidateDay = dayKey(candidate.date);
+  if (!candidateDay || !candidateWindows.length) return null;
 
   for (const application of open) {
     const other =
       catalog.find((item) => item.id === application.eventId) ?? null;
     const otherDay = dayKey(other?.date || application.eventDate);
-    if (otherDay !== candidateDay) continue;
+    if (!otherDay || otherDay !== candidateDay) continue;
 
     const otherWindows = windowsFromApplication(application, catalog);
+    if (!otherWindows.length) continue;
+
     const overlaps = candidateWindows.some((left) =>
       otherWindows.some((right) => windowsOverlap(left, right))
     );

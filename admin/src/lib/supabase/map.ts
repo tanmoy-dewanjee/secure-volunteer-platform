@@ -120,6 +120,7 @@ export function applicationToRow(
     volunteer_id: item.volunteerId,
     role: item.role,
     campus: item.campus,
+    event_date: "",
     submitted_date: item.submitted,
     status: item.status,
     availability: item.availability,

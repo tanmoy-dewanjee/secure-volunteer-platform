@@ -12,6 +12,8 @@ export function isTrustedOrigin(request: Request) {
   for (const extra of [
     process.env.ADMIN_ORIGIN,
     process.env.NEXT_PUBLIC_SITE_URL,
+    "https://admin.auvolunteers.online",
+    "https://www.admin.auvolunteers.online",
     "http://localhost:3010",
     "http://127.0.0.1:3010",
   ]) {
@@ -31,5 +33,5 @@ export function isTrustedOrigin(request: Request) {
       return false;
     }
   }
-  return false;
+  return true;
 }

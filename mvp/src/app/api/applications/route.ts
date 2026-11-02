@@ -145,7 +145,7 @@ async function loadRemoteApplications(username: string) {
     const rpc = await userClient.rpc("list_volunteer_applications", {
       p_username: username,
     });
-    if (!rpc.error && Array.isArray(rpc.data)) {
+    if (!rpc.error && Array.isArray(rpc.data) && rpc.data.length > 0) {
       return {
         source: "supabase" as const,
         applications: rpc.data.map((row) =>
@@ -193,6 +193,37 @@ async function loadRemoteApplications(username: string) {
   };
 }
 
+async function ensureVolunteerDirectory(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  username: string,
+  name: string,
+  campus: string
+) {
+  if (!admin) return;
+  const { data } = await admin
+    .from("volunteer_directory")
+    .select("id")
+    .eq("student_username", username)
+    .maybeSingle();
+  if (data?.id) return;
+  await admin.from("volunteer_directory").insert({
+    id: username,
+    name,
+    student_username: username,
+    email: `${username}@adelaide.edu.au`,
+    phone: "",
+    student_id: username,
+    campus,
+    skills: [],
+    hours: 0,
+    events_attended: 0,
+    no_shows: 0,
+    reliability: 100,
+    status: "Active",
+    notes: "",
+  });
+}
+
 async function saveRemoteApplication(
   username: string,
   name: string,
@@ -226,6 +257,7 @@ async function saveRemoteApplication(
         created?: boolean;
         application?: Record<string, unknown>;
       };
+      await ensureVolunteerDirectory(admin, username, name, application.campus);
       return {
         source: "supabase" as const,
         created: payload.created !== false,
@@ -252,15 +284,23 @@ async function saveRemoteApplication(
     };
   }
 
-  const writer = userClient ?? admin!;
-  const { error } = await writer.from("applications").insert(row);
+  const writer = admin ?? userClient!;
+  let error = (await writer.from("applications").insert(row)).error;
+  if (error && admin) {
+    console.error("Application insert failed:", error.message);
+    error = (await admin.from("applications").upsert(row, { onConflict: "id" }))
+      .error;
+  }
   if (error) {
+    console.error("Application save failed:", error.message);
     return {
       source: "local" as const,
       created: true,
       application: { ...application, status: "Pending" },
     };
   }
+
+  await ensureVolunteerDirectory(admin, username, name, application.campus);
 
   return {
     source: "supabase" as const,

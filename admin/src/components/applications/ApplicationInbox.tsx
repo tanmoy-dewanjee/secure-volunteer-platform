@@ -75,6 +75,16 @@ export default function ApplicationInbox({
         : item
     );
     setOps({ ...ops, applications: nextApps });
+    void Promise.all(
+      ids.map((id) =>
+        fetch("/api/admin/applications", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, status }),
+        })
+      )
+    );
 
     if (status === "Approved") {
       void Promise.all(

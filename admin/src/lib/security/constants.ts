@@ -11,6 +11,7 @@ export const ADMIN_IDLE_MS = SESSION_HOURS * 60 * 60 * 1000;
 export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export const LOGIN_MAX_ATTEMPTS = 5;
 export const LOCKOUT_MS = 15 * 60 * 1000;
+export const LOCKOUT_MESSAGE = "Too many attempts. Try again in 15 minutes.";
 
 export const PUBLIC_PATHS = [
   "/login",

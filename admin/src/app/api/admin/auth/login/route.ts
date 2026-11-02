@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/accounts";
 import { isTrustedOrigin } from "@/lib/security/origin";
 import {
+  LOCKOUT_MESSAGE,
   clearLoginFailures,
   loginBlocked,
   recordLoginFailure,
@@ -36,21 +37,24 @@ export async function POST(request: Request) {
 
   const key = `${ip}:${parsed.username.toLowerCase()}`;
   if (loginBlocked(key)) {
-    return NextResponse.json(
-      { error: "Too many attempts. Try again in 15 minutes." },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: LOCKOUT_MESSAGE }, { status: 429 });
   }
 
   if (isStudentUsername(parsed.username)) {
-    recordLoginFailure(key);
-    return NextResponse.json({ error: GENERIC }, { status: 401 });
+    const locked = recordLoginFailure(key);
+    return NextResponse.json(
+      { error: locked ? LOCKOUT_MESSAGE : GENERIC },
+      { status: locked ? 429 : 401 }
+    );
   }
 
   const account = findAdminAccount(parsed.username);
   if (!account || parsed.password !== DEMO_ADMIN_PASSWORD) {
-    recordLoginFailure(key);
-    return NextResponse.json({ error: GENERIC }, { status: 401 });
+    const locked = recordLoginFailure(key);
+    return NextResponse.json(
+      { error: locked ? LOCKOUT_MESSAGE : GENERIC },
+      { status: locked ? 429 : 401 }
+    );
   }
 
   clearLoginFailures(key);

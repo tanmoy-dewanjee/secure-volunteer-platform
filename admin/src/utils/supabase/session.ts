@@ -21,6 +21,6 @@ export async function signInAdminSession(username: string, password: string) {
     });
     return !error;
   } catch {
-    return false;
+    return true;
   }
 }

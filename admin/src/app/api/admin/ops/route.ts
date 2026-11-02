@@ -87,6 +87,16 @@ async function loadRemoteApplications() {
   const supabase = getSupabaseAdmin();
   if (!supabase) return [];
 
+  const { data, error } = await supabase
+    .from("applications")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (!error && Array.isArray(data) && data.length > 0) {
+    return data.map((row) =>
+      applicationFromRow(row as Record<string, unknown>)
+    );
+  }
+
   const rpc = await supabase.rpc("list_all_applications");
   if (!rpc.error && Array.isArray(rpc.data)) {
     return rpc.data.map((row) =>
@@ -94,10 +104,6 @@ async function loadRemoteApplications() {
     );
   }
 
-  const { data, error } = await supabase
-    .from("applications")
-    .select("*")
-    .order("created_at", { ascending: false });
   if (error || !data) return [];
   return data.map((row) => applicationFromRow(row as Record<string, unknown>));
 }
@@ -110,7 +116,9 @@ export async function GET() {
   const fromFile = listSharedApplications().map(sharedToAdmin);
   const fromDb = await loadRemoteApplications();
   const submitted = mergeApplications(fromDb, fromFile);
-  const applications = mergeApplications(submitted, local.applications);
+  const applications = submitted.length
+    ? submitted
+    : local.applications;
   const fromVolunteers = listRuntimeVolunteers().map((item) => ({
     id: item.id,
     name: item.name,
@@ -171,10 +179,17 @@ export async function GET() {
     swaps: swaps.data?.length ? swaps.data.map(swapFromRow) : local.swaps,
   };
 
-  return NextResponse.json({
-    source: submitted.length || vols.data?.length ? "supabase" : "local",
-    ops,
-  });
+  return NextResponse.json(
+    {
+      source: submitted.length || vols.data?.length ? "supabase" : "local",
+      ops,
+    },
+    {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, private",
+      },
+    }
+  );
 }
 
 export async function PUT(request: Request) {

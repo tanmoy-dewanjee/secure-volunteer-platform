@@ -24,8 +24,8 @@ export default function SiteHeader({ active = "home" }: SiteHeaderProps) {
   const linkClass = (id: SiteHeaderProps["active"]) =>
     id === active ? "text-purple-700" : "hover:text-purple-700";
 
-  const handleSignOut = () => {
-    signOut();
+  const handleSignOut = async () => {
+    await signOut();
     router.push("/");
   };
 

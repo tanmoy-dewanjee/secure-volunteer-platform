@@ -1,5 +1,6 @@
 import { jsonError, jsonOk, requireTrustedOrigin } from "@/lib/security/http";
 import {
+  LOCKOUT_MESSAGE,
   clearLoginFailures,
   clientKey,
   loginBlocked,
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
 
   const key = clientKey(request, `mfa:${username}`);
   if (loginBlocked(key)) {
-    return jsonError("Too many attempts. Try again in 15 minutes.", 429);
+    return jsonError(LOCKOUT_MESSAGE, 429);
   }
 
   let body: {
@@ -110,8 +111,8 @@ export async function POST(request: Request) {
   }
 
   if (body.username && body.username.trim().toLowerCase() !== username) {
-    recordLoginFailure(key);
-    return jsonError("Forbidden", 403);
+    const locked = recordLoginFailure(key);
+    return jsonError(locked ? LOCKOUT_MESSAGE : "Forbidden", locked ? 429 : 403);
   }
 
   if (!isSupabaseConfigured()) {
@@ -135,8 +136,11 @@ export async function POST(request: Request) {
     const ok =
       (await verifyTotp(secret, code)) || validRecovery(recoveryCode, code);
     if (!ok) {
-      recordLoginFailure(key);
-      return jsonError("That code is not valid. Try the latest 6-digit code.", 401);
+      const locked = recordLoginFailure(key);
+      return jsonError(
+        locked ? LOCKOUT_MESSAGE : "That code is not valid. Try the latest 6-digit code.",
+        locked ? 429 : 401
+      );
     }
     if (profile?.id) {
       await saveMfa(String(profile.id), currentData, {
@@ -166,15 +170,21 @@ export async function POST(request: Request) {
 
   if (body.action === "verify") {
     if (!stored.enabled || !stored.secret) {
-      recordLoginFailure(key);
-      return jsonError("Two-factor authentication is not set up yet.", 401);
+      const locked = recordLoginFailure(key);
+      return jsonError(
+        locked ? LOCKOUT_MESSAGE : "Two-factor authentication is not set up yet.",
+        locked ? 429 : 401
+      );
     }
     const ok =
       (await verifyTotp(stored.secret, code)) ||
       validRecovery(stored.recoveryCode, code);
     if (!ok) {
-      recordLoginFailure(key);
-      return jsonError("That authentication code is not valid.", 401);
+      const locked = recordLoginFailure(key);
+      return jsonError(
+        locked ? LOCKOUT_MESSAGE : "That authentication code is not valid.",
+        locked ? 429 : 401
+      );
     }
     clearLoginFailures(key);
     return jsonOk({ source: "supabase", ok: true, enabled: true });

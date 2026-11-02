@@ -10,6 +10,7 @@ import {
   requireTrustedOrigin,
 } from "@/lib/security/http";
 import {
+  LOCKOUT_MESSAGE,
   clearLoginFailures,
   clientKey,
   loginBlocked,
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
 
   const key = clientKey(request, "signup");
   if (loginBlocked(key)) {
-    return jsonError("Too many attempts. Try again in 15 minutes.", 429);
+    return jsonError(LOCKOUT_MESSAGE, 429);
   }
 
   let body: { name?: string; email?: string; password?: string };
@@ -67,12 +68,11 @@ export async function POST(request: Request) {
     password.length < NEW_PASSWORD_MIN ||
     password.length > NEW_PASSWORD_MAX
   ) {
-    recordLoginFailure(key);
-    return jsonError("Check your details.", 400);
+    const locked = recordLoginFailure(key);
+    return jsonError(locked ? LOCKOUT_MESSAGE : "Check your details.", locked ? 429 : 400);
   }
 
   if (isDemoStudentAccount(username)) {
-    recordLoginFailure(key);
     return jsonError(
       "That student ID is a shared demo account. Sign in with it, or use your own student email.",
       400
@@ -80,13 +80,11 @@ export async function POST(request: Request) {
   }
 
   if (!isSupabaseConfigured() || !hasSupabaseSecret()) {
-    recordLoginFailure(key);
     return jsonError("Account creation is not available.", 503);
   }
 
   const supabase = getSupabaseAuthAdmin();
   if (!supabase) {
-    recordLoginFailure(key);
     return jsonError("Account creation is not available.", 503);
   }
 
@@ -112,9 +110,12 @@ export async function POST(request: Request) {
 
   const { data, error } = created;
   if (error || !data.user) {
-    recordLoginFailure(key);
+    const locked = recordLoginFailure(key);
     console.error("Student signup failed:", error?.message);
-    return jsonError(signupErrorMessage(error?.message || ""), 400);
+    return jsonError(
+      locked ? LOCKOUT_MESSAGE : signupErrorMessage(error?.message || ""),
+      locked ? 429 : 400
+    );
   }
 
   const { error: profileError } = await supabase.from("profiles").upsert({
@@ -137,7 +138,11 @@ export async function POST(request: Request) {
   }
 
   clearLoginFailures(key);
-  await setPendingMfaCookie(username);
+  try {
+    await setPendingMfaCookie(username);
+  } catch {
+    /* Signup still succeeds if the pending-MFA cookie cannot be signed. */
+  }
   return jsonOk({
     source: "supabase",
     username,
