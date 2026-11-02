@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { events as seedEvents, type Event } from "@/data/events";
 import { listRuntimeEvents } from "@/lib/store/runtime-file";
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSupabaseAdmin, getSupabaseData } from "@/lib/supabase/config";
 import { eventFromRow, eventToRow, type EventRow } from "@/lib/supabase/map";
 
 function mergeEvents(layers: Event[][]) {
@@ -15,14 +15,7 @@ function mergeEvents(layers: Event[][]) {
 
 export async function GET() {
   const stored = listRuntimeEvents();
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({
-      source: stored.length ? "live" : "local",
-      events: mergeEvents([seedEvents, stored]),
-    });
-  }
-
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseData();
   if (!supabase) {
     return NextResponse.json({
       source: stored.length ? "live" : "local",
@@ -44,9 +37,10 @@ export async function GET() {
   }
 
   let rows = (data as EventRow[] | null) ?? [];
-  if (!rows.length) {
-    await supabase.from("events").upsert(seedEvents.map(eventToRow));
-    const seeded = await supabase
+  const admin = getSupabaseAdmin();
+  if (!rows.length && admin) {
+    await admin.from("events").upsert(seedEvents.map(eventToRow));
+    const seeded = await admin
       .from("events")
       .select("*")
       .is("deleted_at", null)

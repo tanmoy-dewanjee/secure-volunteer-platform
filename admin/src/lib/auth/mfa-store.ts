@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import os from "os";
 import path from "path";
 
 import {
@@ -22,7 +23,9 @@ export type EnrollmentPayload = {
   recoveryCode: string;
 };
 
-const FILE = path.join(process.cwd(), ".data", "admin-mfa.json");
+const FILE = process.env.VERCEL
+  ? path.join(os.tmpdir(), "svp-admin-mfa.json")
+  : path.join(process.cwd(), ".data", "admin-mfa.json");
 
 function readAll(): Record<string, AdminMfaRecord> {
   try {
@@ -38,8 +41,12 @@ function readAll(): Record<string, AdminMfaRecord> {
 }
 
 function writeAll(records: Record<string, AdminMfaRecord>) {
-  mkdirSync(path.dirname(FILE), { recursive: true });
-  writeFileSync(FILE, JSON.stringify(records, null, 2), "utf8");
+  try {
+    mkdirSync(path.dirname(FILE), { recursive: true });
+    writeFileSync(FILE, JSON.stringify(records, null, 2), "utf8");
+  } catch {
+    /* Vercel’s filesystem is read-only; in-memory enrollment still works on this instance. */
+  }
 }
 
 export function getAdminMfa(username: string) {

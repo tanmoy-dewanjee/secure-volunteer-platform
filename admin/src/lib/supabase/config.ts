@@ -44,6 +44,8 @@ export function getSupabaseAuthAdmin(): SupabaseClient | null {
 }
 
 export function getSupabaseAdmin(): SupabaseClient | null {
+  const direct = getSupabaseAuthAdmin();
+  if (direct) return direct;
   const url = supabaseUrl();
   const key = secretKey();
   if (!url || !key) return null;
@@ -55,8 +57,10 @@ export function getSupabaseAdmin(): SupabaseClient | null {
       },
     });
   } catch {
-    return createClient(url, key, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    return null;
   }
+}
+
+export function getSupabaseData(): SupabaseClient | null {
+  return getSupabaseAdmin() ?? getSupabaseAnon();
 }

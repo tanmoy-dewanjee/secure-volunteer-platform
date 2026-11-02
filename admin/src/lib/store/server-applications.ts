@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 
 export type SharedApplication = {
@@ -28,6 +29,9 @@ export type SharedApplication = {
 };
 
 function storeDir() {
+  if (process.env.VERCEL) {
+    return path.join(os.tmpdir(), "svp-runtime");
+  }
   const cwd = process.cwd();
   const folder = path.basename(cwd);
   const root =
@@ -50,9 +54,13 @@ function readAll(): SharedApplication[] {
 }
 
 function writeAll(applications: SharedApplication[]) {
-  const dir = storeDir();
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(storePath(), JSON.stringify(applications, null, 2), "utf8");
+  try {
+    const dir = storeDir();
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(storePath(), JSON.stringify(applications, null, 2), "utf8");
+  } catch {
+    /* Vercel’s filesystem is read-only; Supabase remains the source of truth. */
+  }
 }
 
 export function listSharedApplications(username?: string) {

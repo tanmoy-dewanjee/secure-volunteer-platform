@@ -1,10 +1,14 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 
 import type { Event } from "@/data/events";
 import type { AttendanceAssignment } from "@/lib/attendance";
 
 function runtimeDir() {
+  if (process.env.VERCEL) {
+    return path.join(os.tmpdir(), "svp-runtime");
+  }
   const cwd = process.cwd();
   const folder = path.basename(cwd);
   const root =
@@ -26,8 +30,12 @@ export function readRuntime<T>(name: string, fallback: T): T {
 }
 
 export function writeRuntime<T>(name: string, value: T) {
-  fs.mkdirSync(runtimeDir(), { recursive: true });
-  fs.writeFileSync(filePath(name), JSON.stringify(value, null, 2), "utf8");
+  try {
+    fs.mkdirSync(runtimeDir(), { recursive: true });
+    fs.writeFileSync(filePath(name), JSON.stringify(value, null, 2), "utf8");
+  } catch {
+    /* Vercel’s filesystem is read-only; Supabase remains the source of truth. */
+  }
 }
 
 export function listRuntimeEvents(): Event[] {

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { events as seedEvents, type Event } from "@/data/events";
 import { listRuntimeEvents, upsertRuntimeEvent } from "@/lib/store/runtime-file";
 import { requireAdmin } from "@/lib/supabase/require-admin";
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSupabaseAdmin, getSupabaseData, isSupabaseConfigured } from "@/lib/supabase/config";
 import { eventFromRow, eventToRow, type EventRow } from "@/lib/supabase/map";
 
 function mergeEvents(layers: Event[][]) {
@@ -19,14 +19,7 @@ export async function GET() {
   if (gate.error) return gate.error;
 
   const stored = listRuntimeEvents();
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({
-      source: stored.length ? "live" : "local",
-      events: mergeEvents([seedEvents, stored]),
-    });
-  }
-
-  const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseData();
   if (!supabase) {
     return NextResponse.json({
       source: stored.length ? "live" : "local",
@@ -52,20 +45,27 @@ export async function GET() {
   }
 
   if (!data?.length) {
-    await supabase.from("events").upsert(seedEvents.map(eventToRow));
-    const seeded = await supabase
-      .from("events")
-      .select("*")
-      .is("deleted_at", null)
-      .order("trending_score", { ascending: false });
-    const rows = (seeded.data as EventRow[] | null) ?? [];
+    const admin = getSupabaseAdmin();
+    if (admin) {
+      await admin.from("events").upsert(seedEvents.map(eventToRow));
+      const seeded = await admin
+        .from("events")
+        .select("*")
+        .is("deleted_at", null)
+        .order("trending_score", { ascending: false });
+      const rows = (seeded.data as EventRow[] | null) ?? [];
+      return NextResponse.json({
+        source: rows.length ? "supabase" : stored.length ? "live" : "local",
+        seeded: true,
+        events: mergeEvents([
+          rows.length ? rows.map(eventFromRow) : seedEvents,
+          stored,
+        ]),
+      });
+    }
     return NextResponse.json({
-      source: rows.length ? "supabase" : stored.length ? "live" : "local",
-      seeded: true,
-      events: mergeEvents([
-        rows.length ? rows.map(eventFromRow) : seedEvents,
-        stored,
-      ]),
+      source: stored.length ? "live" : "local",
+      events: mergeEvents([seedEvents, stored]),
     });
   }
 

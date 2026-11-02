@@ -392,24 +392,47 @@ export async function POST(request: Request) {
     availability: plainText(application.availability ?? "", 400),
     role: plainText(application.role ?? "", 120),
   };
-  const stored = upsertSharedApplication(toShared(username, name, sanitized));
-  upsertRuntimeVolunteer({
-    id: username,
-    name,
-    studentUsername: username,
-    email: `${username}@adelaide.edu.au`,
-    phone: "",
-    studentId: username,
-    campus: sanitized.campus,
-    skills: [],
-    hours: 0,
-    eventsAttended: 0,
-    noShows: 0,
-    reliability: 100,
-    status: "Active",
-    notes: `Applied for ${sanitized.eventTitle}`,
-  });
-  const remote = await saveRemoteApplication(username, name, sanitized);
+  const shared = toShared(username, name, sanitized);
+  let stored = shared;
+  try {
+    stored = upsertSharedApplication(shared);
+    upsertRuntimeVolunteer({
+      id: username,
+      name,
+      studentUsername: username,
+      email: `${username}@adelaide.edu.au`,
+      phone: "",
+      studentId: username,
+      campus: sanitized.campus,
+      skills: [],
+      hours: 0,
+      eventsAttended: 0,
+      noShows: 0,
+      reliability: 100,
+      status: "Active",
+      notes: `Applied for ${sanitized.eventTitle}`,
+    });
+  } catch (error) {
+    console.error(
+      "Application local store failed:",
+      error instanceof Error ? error.message : "unknown"
+    );
+  }
+
+  let remote: Awaited<ReturnType<typeof saveRemoteApplication>>;
+  try {
+    remote = await saveRemoteApplication(username, name, sanitized);
+  } catch (error) {
+    console.error(
+      "Application remote save failed:",
+      error instanceof Error ? error.message : "unknown"
+    );
+    remote = {
+      source: "local",
+      created: true,
+      application: { ...sanitized, status: "Pending" },
+    };
+  }
 
   return NextResponse.json({
     source: remote.source,

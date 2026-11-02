@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getEvent } from "@/data/events";
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/config";
+import { getSupabaseData } from "@/lib/supabase/config";
 import { eventFromRow, type EventRow } from "@/lib/supabase/map";
 
 export async function GET(
@@ -10,21 +10,19 @@ export async function GET(
 ) {
   const { id } = await context.params;
 
-  if (isSupabaseConfigured()) {
-    const supabase = getSupabaseAdmin();
-    if (supabase) {
-      const { data } = await supabase
-        .from("events")
-        .select("*")
-        .eq("id", id)
-        .is("deleted_at", null)
-        .maybeSingle();
-      if (data) {
-        return NextResponse.json({
-          source: "supabase",
-          event: eventFromRow(data as EventRow),
-        });
-      }
+  const supabase = getSupabaseData();
+  if (supabase) {
+    const { data } = await supabase
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (data) {
+      return NextResponse.json({
+        source: "supabase",
+        event: eventFromRow(data as EventRow),
+      });
     }
   }
 
