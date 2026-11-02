@@ -6,6 +6,7 @@ import {
   findAdminAccount,
   isStudentUsername,
 } from "@/lib/auth/accounts";
+import { authenticateStoredAdmin } from "@/lib/auth/directory";
 import { isTrustedOrigin } from "@/lib/security/origin";
 import {
   LOCKOUT_MESSAGE,
@@ -48,8 +49,12 @@ export async function POST(request: Request) {
     );
   }
 
-  const account = findAdminAccount(parsed.username);
-  if (!account || parsed.password !== DEMO_ADMIN_PASSWORD) {
+  const demo = findAdminAccount(parsed.username);
+  const account =
+    demo && parsed.password === DEMO_ADMIN_PASSWORD
+      ? demo
+      : await authenticateStoredAdmin(parsed.username, parsed.password);
+  if (!account) {
     const locked = recordLoginFailure(key);
     return NextResponse.json(
       { error: locked ? LOCKOUT_MESSAGE : GENERIC },

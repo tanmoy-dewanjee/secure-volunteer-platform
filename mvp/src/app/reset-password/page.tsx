@@ -4,8 +4,10 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import PasswordStrength from "@/components/auth/PasswordStrength";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
+import { passwordError } from "@/lib/security/password";
 import {
   establishRecoverySessionFromUrl,
   updateStudentPassword,
@@ -54,9 +56,10 @@ export default function ResetPasswordPage() {
     setPasswordError("");
     setConfirmError("");
 
-    if (password.length < 12) {
-      setPasswordError("Password must contain at least 12 characters.");
-      openPopup("Check your details", "Your new password must be at least 12 characters.");
+    const strengthError = passwordError(password);
+    if (strengthError) {
+      setPasswordError(strengthError);
+      openPopup("Check your details", strengthError);
       return;
     }
     if (password !== confirmPassword) {
@@ -67,6 +70,26 @@ export default function ResetPasswordPage() {
 
     setBusy(true);
     try {
+      const response = await fetch("/api/auth/password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (response.ok) {
+        openPopup(
+          "Password updated",
+          "Sign in with your new password. You will still confirm with your authenticator app."
+        );
+        window.setTimeout(() => router.push("/login"), 900);
+        return;
+      }
+      const payload = (await response.json()) as { error?: string };
+      if (response.status === 400 && payload.error) {
+        setPasswordError(payload.error);
+        openPopup("Check your details", payload.error);
+        return;
+      }
       const result = await updateStudentPassword(password);
       if (!result.ok) {
         openPopup(
@@ -128,8 +151,8 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <p className="mt-4 leading-7 text-gray-600">
-                Enter a new password for your volunteer account. Use at least 12
-                characters.
+                Enter a new password for your volunteer account. It must meet
+                the strength checks below.
               </p>
               <form onSubmit={handleSubmit} noValidate className="mt-8 space-y-6">
                 <div>
@@ -166,6 +189,7 @@ export default function ResetPasswordPage() {
                       {passwordError}
                     </p>
                   ) : null}
+                  <PasswordStrength password={password} />
                 </div>
                 <div>
                   <label htmlFor="confirmPassword" className="font-semibold">

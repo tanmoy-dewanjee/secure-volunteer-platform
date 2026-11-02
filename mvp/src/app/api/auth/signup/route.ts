@@ -1,8 +1,5 @@
 import { isDemoStudentAccount } from "@/lib/demo-accounts";
-import {
-  NEW_PASSWORD_MAX,
-  NEW_PASSWORD_MIN,
-} from "@/lib/security/constants";
+import { passwordError } from "@/lib/security/password";
 import {
   jsonError,
   jsonOk,
@@ -30,7 +27,7 @@ function signupErrorMessage(message: string) {
     return "That email is already registered. Sign in, or use forgot password.";
   }
   if (lower.includes("password")) {
-    return "Choose a stronger password of at least 12 characters.";
+    return "Choose a stronger password that meets the listed requirements.";
   }
   if (lower.includes("email")) {
     return "Check the student email and try again.";
@@ -62,14 +59,14 @@ export async function POST(request: Request) {
     /^[a-z0-9._%+-]+@student\.adelaide\.edu\.au$/i.test(email) ||
     /^a\d+@adelaide\.edu\.au$/i.test(email);
 
-  if (
-    name.length < 2 ||
-    !studentEmail ||
-    password.length < NEW_PASSWORD_MIN ||
-    password.length > NEW_PASSWORD_MAX
-  ) {
+  const strengthError = passwordError(password, { name, email, username });
+  if (name.length < 2 || !studentEmail) {
     const locked = recordLoginFailure(key);
     return jsonError(locked ? LOCKOUT_MESSAGE : "Check your details.", locked ? 429 : 400);
+  }
+  if (strengthError) {
+    const locked = recordLoginFailure(key);
+    return jsonError(locked ? LOCKOUT_MESSAGE : strengthError, locked ? 429 : 400);
   }
 
   if (isDemoStudentAccount(username)) {

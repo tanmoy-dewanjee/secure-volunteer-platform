@@ -28,7 +28,8 @@ export default function AdminLoginPage() {
           </p>
           <h2 className="mt-3 text-3xl font-semibold">Sign in</h2>
           <p className="mt-4 leading-7 text-gray-600">
-            Use a coordinator demo account. These accounts skip 2FA.
+            Super admin and club coordinators sign in here. Club coordinators
+            cannot add other admins. Demo accounts skip 2FA.
           </p>
           <Suspense>
             <AdminLoginForm />
@@ -36,10 +37,12 @@ export default function AdminLoginPage() {
           <div className="mt-8 border-l-4 border-[#7C00E8] bg-[#f4ecff] p-4">
             <p className="font-semibold text-purple-900">Demo accounts</p>
             <p className="mt-1 text-sm leading-6 text-gray-700">
-              Username <strong>rotaract.admin</strong>,{" "}
-              <strong>super.admin</strong> or <strong>viewer.admin</strong>.
-              Password <strong>Coordinator1!</strong>. Demo coordinator
-              accounts skip 2FA. Student IDs such as a1234567 are refused.
+              Username <strong>super.admin</strong>,{" "}
+              <strong>rotaract.admin</strong> or{" "}
+              <strong>viewer.admin</strong>. Password{" "}
+              <strong>Coordinator1!</strong>. Club coordinators added by the
+              super admin use the username and password they were given.
+              Student IDs such as a1234567 are refused.
             </p>
           </div>
         </div>

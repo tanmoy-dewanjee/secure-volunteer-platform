@@ -4,9 +4,11 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import PasswordStrength from "@/components/auth/PasswordStrength";
 import TwoFactorPanel from "@/components/auth/TwoFactorPanel";
 import DemoBanner from "@/components/DemoBanner";
 import { markLoginWave } from "@/lib/login-wave";
+import { passwordError } from "@/lib/security/password";
 import { signIn } from "@/lib/session";
 import { signInStudentSession } from "@/utils/supabase/session";
 
@@ -151,15 +153,18 @@ export default function SignupPage() {
                 firstProblem =
                     "Please create a password.";
             }
-        } else if (password.length < 12) {
-            newErrors.password =
-                "Password must contain at least 12 characters.";
-
-            valid = false;
-
-            if (!firstProblem) {
-                firstProblem =
-                    "Your password must contain at least 12 characters.";
+        } else {
+            const strengthError = passwordError(password, {
+                name,
+                email,
+                username: usernameFromSignupEmail(email),
+            });
+            if (strengthError) {
+                newErrors.password = strengthError;
+                valid = false;
+                if (!firstProblem) {
+                    firstProblem = strengthError;
+                }
             }
         }
 
@@ -450,7 +455,7 @@ export default function SignupPage() {
                                         password: "",
                                     }));
                                 }}
-                                placeholder="At least 8 characters"
+                                placeholder="Create a strong password"
                                 autoComplete="new-password"
                                 aria-invalid={Boolean(
                                     errors.password
@@ -470,10 +475,14 @@ export default function SignupPage() {
                                 </p>
                             )}
 
-                            <p className="mt-2 text-sm text-gray-500">
-                                Minimum 8 characters for this
-                                prototype.
-                            </p>
+                            <PasswordStrength
+                                password={password}
+                                context={{
+                                    name,
+                                    email,
+                                    username: usernameFromSignupEmail(email),
+                                }}
+                            />
                         </div>
 
                         {/* Confirm password */}

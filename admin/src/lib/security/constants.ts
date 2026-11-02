@@ -12,6 +12,7 @@ export const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 export const LOGIN_MAX_ATTEMPTS = 5;
 export const LOCKOUT_MS = 15 * 60 * 1000;
 export const LOCKOUT_MESSAGE = "Too many attempts. Try again in 15 minutes.";
+export const NEW_ADMIN_PASSWORD_MIN = 12;
 
 export const PUBLIC_PATHS = [
   "/login",

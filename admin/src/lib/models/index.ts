@@ -289,6 +289,7 @@ export const ROLE_PERMISSIONS: Record<
     | "communications.send"
     | "reports.export"
     | "settings.manage"
+    | "admins.manage"
     | "audit.read"
     | "pii.reveal"
   )[]
@@ -302,6 +303,7 @@ export const ROLE_PERMISSIONS: Record<
     "communications.send",
     "reports.export",
     "settings.manage",
+    "admins.manage",
     "audit.read",
     "pii.reveal",
   ],
