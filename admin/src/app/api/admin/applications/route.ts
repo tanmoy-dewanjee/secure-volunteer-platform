@@ -27,7 +27,11 @@ export async function PATCH(request: Request) {
 
   const id = body.id?.trim();
   const status = body.status?.trim();
-  if (!id || !STATUSES.includes(status as (typeof STATUSES)[number])) {
+  if (
+    !id ||
+    !status ||
+    !STATUSES.includes(status as (typeof STATUSES)[number])
+  ) {
     return NextResponse.json(
       { error: "id and status are required." },
       { status: 400 }
