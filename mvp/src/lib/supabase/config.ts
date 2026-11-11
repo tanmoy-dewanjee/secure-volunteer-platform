@@ -65,6 +65,14 @@ export function hasSupabaseSecret() {
   return Boolean(supabaseUrl() && secretKey());
 }
 
+export function supabaseProjectHost() {
+  try {
+    return new URL(supabaseUrl()).host;
+  } catch {
+    return "";
+  }
+}
+
 export function getSupabaseAnon(): SupabaseClient | null {
   const url = supabaseUrl();
   const key = publicKey();

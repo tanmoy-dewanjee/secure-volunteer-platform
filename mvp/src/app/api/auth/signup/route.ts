@@ -18,6 +18,7 @@ import {
   adminCreateUser,
   getSupabaseAnon,
   getSupabaseAuthAdmin,
+  hasSupabaseSecret,
   isSupabaseConfigured,
   usernameFromEmail,
 } from "@/lib/supabase/config";
@@ -25,8 +26,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 function signupErrorMessage(message: string) {
   const lower = message.toLowerCase();
-  if (lower.includes("already") || lower.includes("registered") || lower.includes("exists")) {
+  if (
+    lower.includes("already") ||
+    lower.includes("registered") ||
+    lower.includes("exists") ||
+    lower.includes("duplicate")
+  ) {
     return "That email is already registered. Sign in, or use forgot password.";
+  }
+  if (lower.includes("rate limit") || lower.includes("too many")) {
+    return "Too many sign-up attempts. Wait a few minutes, then try again or sign in.";
   }
   if (lower.includes("password")) {
     return "Choose a stronger password that meets the listed requirements.";
@@ -34,16 +43,17 @@ function signupErrorMessage(message: string) {
   if (lower.includes("database")) {
     return "That student ID is already in use. Try your a-number email such as a1234567@adelaide.edu.au.";
   }
-  if (lower.includes("email")) {
-    return "Check the student email and try again.";
-  }
   if (
     lower.includes("api key") ||
     lower.includes("not allowed") ||
     lower.includes("unauthorized") ||
-    lower.includes("forbidden")
+    lower.includes("forbidden") ||
+    lower.includes("invalid jwt")
   ) {
     return "Account creation is not available.";
+  }
+  if (lower.includes("invalid format") || lower.includes("invalid email")) {
+    return "Check the student email and try again.";
   }
   return "Could not create that account. Try a different student email.";
 }
@@ -120,6 +130,18 @@ export async function POST(request: Request) {
     return jsonError("Account creation is not available.", 503);
   }
 
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("username,email")
+    .eq("email", email)
+    .maybeSingle();
+  if (existingProfile) {
+    return jsonError(
+      "That email is already registered. Sign in, or use forgot password.",
+      400
+    );
+  }
+
   const account = await availableUsername(supabase, username);
   const metadata = {
     portal: "student",
@@ -149,7 +171,13 @@ export async function POST(request: Request) {
     });
   }
 
-  if ((created.error || !created.data.user) && getSupabaseAnon()) {
+  // Public signUp sends a confirmation email and is rate-limited. Use it only
+  // when this deployment has no service-role/secret key.
+  if (
+    (created.error || !created.data.user) &&
+    !hasSupabaseSecret() &&
+    getSupabaseAnon()
+  ) {
     const signed = await getSupabaseAnon()!.auth.signUp({
       email,
       password,
