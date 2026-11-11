@@ -124,7 +124,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 })}
               </nav>
               <div className="border-t border-white/10 pt-4 text-sm">
-                <p className="font-semibold">{session?.displayName ?? "Coordinator"}</p>
+                <Link
+                  href="/profile"
+                  onClick={() => setNavOpen(false)}
+                  className="font-semibold hover:text-purple-200"
+                >
+                  {session?.displayName ?? "Coordinator"}
+                </Link>
                 <p className="mt-1 text-gray-400">{session?.username}</p>
                 <p className="mt-1 text-xs uppercase tracking-wide text-purple-200">
                   {session?.role?.replace("_", " ")}

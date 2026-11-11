@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import QrCodeImage from "@/components/qr/QrCodeImage";
 import { markLoginWave } from "@/lib/login-wave";
+import { safeAdminNext } from "@/lib/routing";
 import { signInAdminSession } from "@/utils/supabase/session";
 
 type Enrollment = {
@@ -27,7 +28,7 @@ export default function AdminLoginForm() {
 
   const finish = () => {
     const next = searchParams.get("next");
-    router.replace(next && next.startsWith("/") && !next.startsWith("//") ? next : "/");
+    router.replace(safeAdminNext(next));
     router.refresh();
   };
 

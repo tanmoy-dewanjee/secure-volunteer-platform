@@ -1,6 +1,7 @@
 export const adminRoutes = {
   login: "/login",
   dashboard: "/",
+  profile: "/profile",
   events: "/events",
   eventNew: "/events/new",
   event: (id: string) => `/events/${id}`,
@@ -35,6 +36,7 @@ export const eventTabs: { id: EventTab; label: string }[] = [
 
 export const sidebarNav = [
   { href: "/", label: "Dashboard" },
+  { href: "/profile", label: "Profile" },
   { href: "/events", label: "Events" },
   { href: "/applications", label: "Applications" },
   { href: "/volunteers", label: "Volunteers" },
@@ -43,3 +45,29 @@ export const sidebarNav = [
   { href: "/settings", label: "Settings", role: "super_admin" as const },
   { href: "/settings/audit", label: "Audit log" },
 ];
+
+const knownAdminPrefixes = [
+  "/",
+  "/profile",
+  "/events",
+  "/applications",
+  "/volunteers",
+  "/communications",
+  "/reports",
+  "/settings",
+] as const;
+
+export function safeAdminNext(next: string | null) {
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) {
+    return "/";
+  }
+  const path = next.split("?")[0] ?? next;
+  if (
+    knownAdminPrefixes.some(
+      (prefix) => path === prefix || (prefix !== "/" && path.startsWith(`${prefix}/`))
+    )
+  ) {
+    return next;
+  }
+  return "/";
+}
