@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import PasswordStrength from "@/components/auth/PasswordStrength";
 import SiteFooter from "@/components/layout/SiteFooter";
 import SiteHeader from "@/components/layout/SiteHeader";
-import { passwordError } from "@/lib/security/password";
+import { passwordError as checkPasswordStrength } from "@/lib/security/password";
 import {
   establishRecoverySessionFromUrl,
   updateStudentPassword,
@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
     setPasswordError("");
     setConfirmError("");
 
-    const strengthError = passwordError(password);
+    const strengthError = checkPasswordStrength(password);
     if (strengthError) {
       setPasswordError(strengthError);
       openPopup("Check your details", strengthError);

@@ -128,7 +128,12 @@ export async function POST(request: Request) {
     display_name: name,
   };
 
-  let created = await adminCreateUser({
+  type CreatedAccount = {
+    data: { user: { id: string } | null };
+    error: { message?: string } | null;
+  };
+
+  let created: CreatedAccount = await adminCreateUser({
     email,
     password,
     metadata,
@@ -151,7 +156,15 @@ export async function POST(request: Request) {
       options: { data: metadata },
     });
     if (!signed.error && signed.data.user) {
-      created = signed;
+      created = {
+        data: { user: { id: signed.data.user.id } },
+        error: null,
+      };
+    } else if (signed.error) {
+      created = {
+        data: { user: null },
+        error: { message: signed.error.message },
+      };
     }
   }
 
